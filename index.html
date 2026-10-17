@@ -7,13 +7,29 @@
     <!-- TỐI ƯU SEO & META TAGS -->
     <title>Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục Biểu Diễn & Đạo Cụ Tại Gia Lai</title>
     <meta name="description" content="Chuyên cho thuê trang phục biểu diễn, đồ sự kiện, cưới hỏi, áo dài và đạo cụ quay chụp chuyên nghiệp tại Phú Túc, Gia Lai. Giá tốt, thủ tục nhanh chóng. SĐT: 0365630354.">
+    <link rel="canonical" href="https://thuedo102.vn/">
     
-    <!-- Open Graph (Hiển thị đẹp khi chia sẻ Facebook, Zalo) -->
+    <!-- Open Graph (Chuẩn hóa 100% cho Facebook, Messenger & Zalo) -->
+    <meta property="og:locale" content="vi_VN">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Tiệm Thuê Đồ 102">
+    <meta property="og:url" content="https://thuedo102.vn/">
     <meta property="og:title" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Gia Lai">
     <meta property="og:description" content="Hệ thống cho thuê trang phục biểu diễn, sự kiện uy tín tại Gia Lai. Xem mẫu trực tuyến và đặt đồ nhanh chóng!">
+    
+    <!-- Khai báo ảnh đại diện khi chia sẻ link (Kèm kích thước để Facebook hiển thị ngay lần đầu) -->
     <meta property="og:image" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
-    <meta property="og:url" content="https://thuedo102.vn">
-    <meta property="og:type" content="website">
+    <meta property="og:image:secure_url" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Phú Túc, Gia Lai">
+
+    <!-- Thẻ dự phòng cho Zalo, Telegram và các nền tảng mạng xã hội khác -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Gia Lai">
+    <meta name="twitter:description" content="Hệ thống cho thuê trang phục biểu diễn, sự kiện uy tín tại Gia Lai. Xem mẫu trực tuyến và đặt đồ nhanh chóng!">
+    <meta name="twitter:image" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
 
     <!-- Schema Markup (Giúp Google hiểu rõ thông tin doanh nghiệp địa phương) -->
     <script type="application/ld+json">
@@ -349,7 +365,7 @@
             align-items: center;
             justify-content: center;
             background: transparent;
-            touch-action: none; /* Tắt hành vi mặc định của trình duyệt để xử lý Zoom 2 ngón + Pan + Swipe tùy chỉnh */
+            touch-action: none;
             overflow: hidden;
         }
 
@@ -589,8 +605,6 @@
         </div>
         <div class="pagination" id="paginationContainer"></div>
     </div>
-
-    
 
     <button class="cart-float-btn" onclick="openCart()">
         <span style="font-size: 20px; filter: brightness(0) invert(1);">&#128722;</span> Giỏ hàng <span class="cart-count" id="cartCountBadge">0</span>
@@ -1185,7 +1199,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                 // 1. XỬ LÝ CẢM ỨNG TRÊN ĐIỆN THOẠI (Pinch Zoom + Pan + Double Tap + Swipe)
                 container.addEventListener('touchstart', (e) => {
                     if (e.touches.length === 2) {
-                        // Bắt đầu chụm 2 ngón tay để Zoom
                         isPinching = true;
                         isPanning = false;
                         isSwiping = false;
@@ -1195,7 +1208,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                         const now = Date.now();
                         const timeDiff = now - lastTapTime;
 
-                        // Kiểm tra chạm đúp 2 lần (Double Tap) để Zoom nhanh
                         if (timeDiff < 300 && timeDiff > 0) {
                             e.preventDefault();
                             if (zoomScale > 1) {
@@ -1215,12 +1227,10 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                         touchStartY = e.touches[0].clientY;
 
                         if (zoomScale > 1) {
-                            // Nếu ảnh đang phóng to thì dùng 1 ngón để kéo xem chi tiết (Pan)
                             isPanning = true;
                             startPanX = touchStartX - panX;
                             startPanY = touchStartY - panY;
                         } else {
-                            // Nếu ảnh ở mức 1x thì chuẩn bị vuốt qua ảnh khác
                             isPanning = false;
                             isSwiping = false;
                         }
@@ -1262,7 +1272,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                         return;
                     }
 
-                    // Nếu ảnh đang ở mức bình thường (1x) thì kiểm tra vuốt ngang chuyển ảnh
                     if (zoomScale === 1 && e.changedTouches.length === 1) {
                         touchEndX = e.changedTouches[0].clientX;
                         touchEndY = e.changedTouches[0].clientY;
@@ -1315,7 +1324,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                 });
             }
 
-            // Hỗ trợ bấm phím mũi tên Trái/Phải và ESC trên máy tính
             document.addEventListener('keydown', (e) => {
                 if (document.getElementById('albumModal').style.display === 'flex') {
                     if (e.key === 'ArrowLeft') changeSlide(-1);
