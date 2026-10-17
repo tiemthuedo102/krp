@@ -9,7 +9,7 @@
     <meta name="description" content="Chuyên cho thuê trang phục biểu diễn, đồ sự kiện, cưới hỏi, áo dài và đạo cụ quay chụp chuyên nghiệp tại Phú Túc, Gia Lai. Giá tốt, thủ tục nhanh chóng. SĐT: 0365630354.">
     <link rel="canonical" href="https://thuedo102.vn/">
     
-    <!-- Open Graph (Chuẩn hóa 100% cho Facebook, Messenger & Zalo) -->
+    <!-- Open Graph (Ưu tiên dùng ảnh Banner điện thoại cho Facebook/Zalo) -->
     <meta property="og:locale" content="vi_VN">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Tiệm Thuê Đồ 102">
@@ -17,19 +17,19 @@
     <meta property="og:title" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Gia Lai">
     <meta property="og:description" content="Hệ thống cho thuê trang phục biểu diễn, sự kiện uy tín tại Gia Lai. Xem mẫu trực tuyến và đặt đồ nhanh chóng!">
     
-    <!-- Khai báo ảnh đại diện khi chia sẻ link (Kèm kích thước để Facebook hiển thị ngay lần đầu) -->
-    <meta property="og:image" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
-    <meta property="og:image:secure_url" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
+    <!-- KHAI BÁO ẢNH BANNER ĐIỆN THOẠI (Lấy từ ô M3) -->
+    <meta property="og:image" content="https://i.ibb.co/rGvfPGJ5/baner-DT.png">
+    <meta property="og:image:secure_url" content="https://i.ibb.co/rGvfPGJ5/baner-DT.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Phú Túc, Gia Lai">
+    <meta property="og:image:alt" content="Tiệm Thuê Đồ 102 - Phú Túc, Gia Lai">
 
-    <!-- Thẻ dự phòng cho Zalo, Telegram và các nền tảng mạng xã hội khác -->
+    <!-- Twitter / Zalo Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục & Đạo Cụ Gia Lai">
     <meta name="twitter:description" content="Hệ thống cho thuê trang phục biểu diễn, sự kiện uy tín tại Gia Lai. Xem mẫu trực tuyến và đặt đồ nhanh chóng!">
-    <meta name="twitter:image" content="https://i.ibb.co/JjBxrRKj/baner-PC.png">
+    <meta name="twitter:image" content="https://i.ibb.co/rGvfPGJ5/baner-DT.png">
 
     <!-- Schema Markup (Giúp Google hiểu rõ thông tin doanh nghiệp địa phương) -->
     <script type="application/ld+json">
@@ -37,7 +37,7 @@
       "@context": "https://schema.org",
       "@type": "LocalBusiness",
       "name": "Tiệm thuê đồ 102",
-      "image": "https://i.ibb.co/JjBxrRKj/baner-PC.png",
+      "image": "https://i.ibb.co/rGvfPGJ5/baner-DT.png",
       "@id": "https://thuedo102.vn",
       "url": "https://thuedo102.vn",
       "telephone": "0365630354",
@@ -211,30 +211,6 @@
         .page-btn:hover { background: var(--light-pink); cursor: pointer; }
         .page-btn.active { background: var(--primary); color: var(--white); border-color: var(--primary); cursor: pointer; }
         .page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        /* ================= SEO INTRO TEXT ================= */
-        .seo-intro-container {
-            max-width: 1200px;
-            margin: 30px auto;
-            padding: 20px;
-            background: var(--white);
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--accent);
-        }
-        .seo-intro-container h2 {
-            font-size: 18px;
-            color: var(--primary);
-            margin-top: 0;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-        }
-        .seo-intro-container p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--text-main);
-            line-height: 1.6;
-        }
 
         /* ================= FOOTER ================= */
         .site-footer { background-color: var(--footer-bg); color: #ecf0f1; padding: 50px 20px 20px; border-top: 5px solid var(--primary); }
@@ -763,7 +739,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
         let currentPage = 1;
         const itemsPerPage = 16;
 
-        // Các biến quản lý Zoom, Pan (Kéo ảnh) và Vuốt chuyển ảnh
         let zoomScale = 1;
         let panX = 0;
         let panY = 0;
@@ -1102,7 +1077,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
             document.getElementById('menu-bar').scrollIntoView({ behavior: 'smooth' });
         }
 
-        /* ================= XỬ LÝ XEM ẢNH FULLSCREEN + ZOOM + PAN + VUỐT ================= */
         function getActiveSlideImg() {
             return document.querySelector('.slide-img.active');
         }
@@ -1196,7 +1170,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
         document.addEventListener('DOMContentLoaded', () => {
             const container = document.getElementById('slideshowContainer');
             if (container) {
-                // 1. XỬ LÝ CẢM ỨNG TRÊN ĐIỆN THOẠI (Pinch Zoom + Pan + Double Tap + Swipe)
                 container.addEventListener('touchstart', (e) => {
                     if (e.touches.length === 2) {
                         isPinching = true;
@@ -1279,7 +1252,6 @@ Số 65 Hai Bà Trưng, thôn Lâm Viên, xã Phú Túc, tỉnh Gia Lai</a></p>
                     }
                 }, { passive: true });
 
-                // 2. XỬ LÝ TRÊN MÁY TÍNH (Lăn chuột Zoom + Double Click + Kéo chuột Pan)
                 container.addEventListener('wheel', (e) => {
                     e.preventDefault();
                     const delta = e.deltaY < 0 ? 0.25 : -0.25;
