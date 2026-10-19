@@ -751,6 +751,7 @@
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
 
         let allProducts = [];
+        let menuData = []; // Dữ liệu menu từ sheet "menu"
         let cart = []; 
         let currentSlideImages = []; 
         let currentSlideIndex = 0; 
@@ -861,14 +862,21 @@
             }
 
             const sheetId = sheetIdMatch[1];
-            const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${Date.now()}`;
+            const timestamp = Date.now();
+            const mainCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&t=${timestamp}`;
+            const menuCsvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=menu&t=${timestamp}`;
 
             try {
-                const response = await fetch(csvUrl);
-                if (!response.ok) throw new Error('Không thể tải dữ liệu sản phẩm');
-                const csv = await response.text();
-                const rows = parseFullCSV(csv);
-                if (rows.length < 3) throw new Error('File trống');
+                // Tải dữ liệu sản phẩm và dữ liệu menu song song
+                const [mainResponse, menuResponse] = await Promise.all([
+                    fetch(mainCsvUrl),
+                    fetch(menuCsvUrl).catch(() => null)
+                ]);
+
+                if (!mainResponse.ok) throw new Error('Không thể tải dữ liệu sản phẩm');
+                const mainCsv = await mainResponse.text();
+                const rows = parseFullCSV(mainCsv);
+                if (rows.length < 3) throw new Error('File sản phẩm trống');
 
                 const headers = rows[0].map(h => h.toLowerCase().trim());
                 
@@ -913,6 +921,22 @@
                     };
                 }).filter(p => p !== null);
 
+                // Xử lý dữ liệu từ sheet "menu" nếu tải thành công
+                menuData = [];
+                if (menuResponse && menuResponse.ok) {
+                    const menuCsv = await menuResponse.text();
+                    const menuRows = parseFullCSV(menuCsv);
+                    // Bỏ qua dòng tiêu đề (nếu có), lấy cột A (index 0) làm menu top và cột B (index 1) làm menu sub
+                    for (let i = 1; i < menuRows.length; i++) {
+                        const row = menuRows[i];
+                        const topCat = row[0] ? row[0].trim() : '';
+                        const subCat = row[1] ? row[1].trim() : '';
+                        if (topCat) {
+                            menuData.push({ top: topCat, sub: subCat });
+                        }
+                    }
+                }
+
                 if (allProducts.length > 0) {
                     buildDynamicMenu();
                     renderFilteredProducts();
@@ -933,15 +957,30 @@
             let menuHTML = '<button class="menu-btn active" id="btnAll" onclick="filterProducts(\'Tất cả\')">Tất cả</button>';
 
             const categoryMap = {};
-            allProducts.forEach(p => {
-                const cat = p.category;
-                if (!categoryMap[cat]) {
-                    categoryMap[cat] = new Set();
-                }
-                if (p.subcategory && p.subcategory.trim() !== '') {
-                    categoryMap[cat].add(p.subcategory.trim());
-                }
-            });
+
+            // Nếu sheet "menu" có dữ liệu, ưu tiên dùng cấu trúc từ sheet "menu" (Cột A: top, Cột B: sub)
+            if (menuData.length > 0) {
+                menuData.forEach(item => {
+                    const cat = item.top;
+                    if (!categoryMap[cat]) {
+                        categoryMap[cat] = new Set();
+                    }
+                    if (item.sub) {
+                        categoryMap[cat].add(item.sub);
+                    }
+                });
+            } else {
+                // Fallback: Tự động lấy danh mục từ danh sách sản phẩm nếu không tìm thấy sheet "menu"
+                allProducts.forEach(p => {
+                    const cat = p.category;
+                    if (!categoryMap[cat]) {
+                        categoryMap[cat] = new Set();
+                    }
+                    if (p.subcategory && p.subcategory.trim() !== '') {
+                        categoryMap[cat].add(p.subcategory.trim());
+                    }
+                });
+            }
 
             let dynamicCategoriesHTML = '';
             for (const [cat, subcats] of Object.entries(categoryMap)) {
@@ -1588,7 +1627,7 @@
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
-            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n\n`;
+            let msg = `🔔 *ĐƠN ĐẶT THUẾ ĐỒ (${timeString})*\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
             msg += `📅 *Ngày mượn:* ${formatDateVN(rentalVal)}\n`;
