@@ -749,7 +749,7 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKuvPw75_Bhb10j0VZC7e6ysPbqHI-msxg20RqDLgMaf7AcJMd0eWejhMUaDQdIMxPPQ/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz3VVo6Ecm4UYtMyXJ8WcZTI_jl_F8-F0Z0RMoUSPL5gaKu2-k3h-bA7yYAxIcqYT34bw/exec';
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -1598,8 +1598,6 @@
 
             let baseTotal = 0;
             let itemsDetailArr = [];
-            
-            // Lấy danh sách Mã SP trên web (nếu 1 mã: SP01; nếu nhiều mã: SP01-SP02)
             let productCodesList = [...new Set(cart.map(i => String(i.id).trim()))].join('-');
 
             cart.forEach((i) => { 
@@ -1639,9 +1637,8 @@
             btn.disabled = true;
 
             try {
-                // Chuẩn bị dữ liệu chuẩn URLSearchParams để gửi sang Google Apps Script (Sheet "hoa_don")
+                // Tạo form data chuẩn để đẩy thẳng vào doPost(e) của Google Apps Script
                 const formData = new URLSearchParams();
-                formData.append('sheetName', 'hoa_don');
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
                 formData.append('name', nameVal !== '' ? nameVal : 'Khách lẻ');
@@ -1654,7 +1651,7 @@
                 formData.append('extraFee', `${formatMoney(extraFee)}đ`);
                 formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
 
-                // 1. Gửi đồng thời Telegram & Google Apps Script
+                // Gửi đồng thời Telegram và Google Sheet không dùng chế độ phức tạp để tránh bị chặn CORS
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1665,7 +1662,6 @@
                     })
                 }).catch(e => console.error("Lỗi Telegram:", e));
 
-                // Truyền trực tiếp đối tượng URLSearchParams vào body để trình duyệt tự gán header chuẩn trong chế độ no-cors
                 const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
