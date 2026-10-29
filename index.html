@@ -749,7 +749,7 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzm3bq7qi6bb6WiNJnMAUha2vbWjqA9tSj1bShRjFv85q7EyQyyUnR3DzLx1eYyBCb6oQ/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKuvPw75_Bhb10j0VZC7e6ysPbqHI-msxg20RqDLgMaf7AcJMd0eWejhMUaDQdIMxPPQ/exec';
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -874,7 +874,7 @@
                 if (!response.ok) throw new Error('Không thể tải dữ liệu sản phẩm');
                 const csv = await response.text();
                 const rows = parseFullCSV(csv);
-                if (rows.length < 3) throw new Error('File trống');
+                if (rows.length < 2) throw new Error('File trống');
 
                 const headers = rows[0].map(h => h.toLowerCase().trim());
                 
@@ -1639,8 +1639,23 @@
             btn.disabled = true;
 
             try {
-                // 1. GỬI TELEGRAM
-                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                // Chuẩn bị dữ liệu chuẩn URLSearchParams để gửi sang Google Apps Script (Sheet "hoa_don")
+                const formData = new URLSearchParams();
+                formData.append('sheetName', 'hoa_don');
+                formData.append('productCode', productCodesList);
+                formData.append('timeString', timeString);
+                formData.append('name', nameVal !== '' ? nameVal : 'Khách lẻ');
+                formData.append('phone', phoneVal);
+                formData.append('rentalDate', formatDateVN(rentalVal));
+                formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
+                formData.append('itemsDetail', itemsDetailArr.join(';\n'));
+                formData.append('total', `${formatMoney(baseTotal)}đ`);
+                formData.append('deposit', `${formatMoney(deposit)}đ`);
+                formData.append('extraFee', `${formatMoney(extraFee)}đ`);
+                formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
+
+                // 1. Gửi đồng thời Telegram & Google Apps Script
+                const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1650,29 +1665,14 @@
                     })
                 }).catch(e => console.error("Lỗi Telegram:", e));
 
-                // 2. GỬI SANG GOOGLE APPS SCRIPT ĐỂ GHI SHEET "HOA_DON"
-                const payloadParams = new URLSearchParams({
-                    productCode: productCodesList,
-                    timeString: timeString,
-                    name: nameVal,
-                    phone: phoneVal,
-                    rentalDate: formatDateVN(rentalVal),
-                    returnDate: formatDateVN(returnVal) + ` (${rentalDays} ngày)`,
-                    itemsDetail: itemsDetailArr.join(';\n'),
-                    total: formatMoney(baseTotal) + 'đ',
-                    deposit: formatMoney(deposit) + 'đ',
-                    extraFee: formatMoney(extraFee) + 'đ',
-                    remaining: formatMoney(receiveAmount) + 'đ'
-                });
-
-                await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                // Truyền trực tiếp đối tượng URLSearchParams vào body để trình duyệt tự gán header chuẩn trong chế độ no-cors
+                const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: payloadParams.toString()
+                    body: formData
                 });
+
+                await Promise.all([sheetPromise, telegramPromise]);
 
                 showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ lại ngay.");
                 cart = [];
