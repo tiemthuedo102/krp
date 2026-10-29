@@ -749,7 +749,7 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyJHZY7QWcHJxitCj7GgANvxrfbr5sAMUYaL0KdkOyofsWq_h9IBXQY_c_D5ptBS-TvJw/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxXpWLpPmELYJC-T3AJ3nWACjW1tYP98jGg7m3ZDSo4f_NCvNolDHRTQqg8GJbMW_Heww/exec';
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -1602,7 +1602,8 @@
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}]`);
+                // ĐÃ BỔ SUNG: Gửi kèm Thành tiền của từng mã sản phẩm
+                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
             });
             
             const { extraFee, rentalDays } = calculateExtraFee(baseTotal);
@@ -1610,7 +1611,7 @@
             const receiveAmount = baseTotal - deposit + extraFee;
 
             // Tin nhắn Telegram
-            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n`;
+            let msg = `🔔 *ĐƠN ĐẶT THUẾ ĐỒ (${timeString})*\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
@@ -1637,7 +1638,6 @@
             btn.disabled = true;
 
             try {
-                // Tạo form data chuẩn để đẩy thẳng vào doPost(e) của Google Apps Script
                 const formData = new URLSearchParams();
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
@@ -1651,7 +1651,6 @@
                 formData.append('extraFee', `${formatMoney(extraFee)}đ`);
                 formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
 
-                // Gửi đồng thời Telegram và Google Sheet không dùng chế độ phức tạp để tránh bị chặn CORS
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
