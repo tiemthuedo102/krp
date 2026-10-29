@@ -3,7 +3,6 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- TỐI ƯU SEO & META TAGS -->
     <title>Tiệm Thuê Đồ 102 - Cho Thuê Trang Phục Biểu Diễn & Đạo Cụ Tại Gia Lai</title>
     <meta name="description" content="Chuyên cho thuê trang phục biểu diễn, đồ sự kiện, cưới hỏi, áo dài và đạo cụ quay chụp chuyên nghiệp tại Phú Túc, Gia Lai. Giá tốt, thủ tục nhanh chóng. SĐT: 0365630354.">
     <link href="https://thuedo102.vn/" rel="canonical" />
@@ -114,7 +113,7 @@
             position: sticky; 
             top: 0; 
             z-index: 100; 
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
             width: 100%;
         }
         
@@ -506,7 +505,7 @@
 
             .modal-content { 
                 width: 95% !important; 
-                max-width: 95% !important;
+                max-width: 95% !important; 
                 padding: 15px !important; 
                 border-radius: 8px;
             }
@@ -748,14 +747,9 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        // Dán URL Web App triển khai từ Google Apps Script của bảng 'hoa_don' vào đây
         const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz21jcODt-wAt_tupCeL1kfcbX25gxSLZir6q0ZC0hIwayfuOeGx5H3lu5PnjHv2MwXlw/exec';
-        
-        // Cấu hình Telegram dự phòng (khi chưa cấu hình URL Apps Script)
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
-        
-        // Link Google Sheet danh sách sản phẩm
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
 
         let allProducts = [];
@@ -1611,7 +1605,6 @@
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
-            // Định dạng tin nhắn gửi thông báo
             let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
@@ -1652,29 +1645,13 @@
             btn.disabled = true;
 
             try {
-                // Kiểm tra xem đã cấu hình Google Apps Script URL thực tế chưa
-                const isAppsScriptConfigured = GOOGLE_APPS_SCRIPT_URL && !GOOGLE_APPS_SCRIPT_URL.includes('REPLACE_WITH_YOUR_EXEC_ID');
-
-                if (isAppsScriptConfigured) {
-                    // Gửi tới Google Apps Script (Apps Script sẽ ghi trực tiếp vào Google Sheet 'hoa_don' và chuyển tiếp Telegram)
-                    await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(orderPayload)
-                    });
-                } else {
-                    // Dự phòng trực tiếp Telegram nếu chưa deploy Apps Script
-                    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: TELEGRAM_CHAT_ID,
-                            text: msg,
-                            parse_mode: 'Markdown'
-                        })
-                    });
-                }
+                // Sử dụng text/plain để vượt qua CORS của Google Apps Script một cách tuyệt đối
+                await fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(orderPayload)
+                });
 
                 showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ lại ngay.");
                 cart = [];
