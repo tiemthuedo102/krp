@@ -231,7 +231,7 @@
             min-width: 320px !important;
         }
 
-        /* ALBUM ZOOM FULLSCREEN (GIAO DIỆN SÁNG MỜ) */
+        /* ALBUM ZOOM FULLSCREEN */
         #albumModal {
             padding: 0 !important;
             background: rgba(255, 255, 255, 0.96) !important;
@@ -749,7 +749,7 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxye-ICO-eTc1dQww2mu02-SYHbzhQW042pOMFvLrTe3rN8s8OosDB72FUVlGMWyzUUhQ/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwcGM_fUooyoBQxO1hAYQ5BlMYX6l9MBiEuvLuaKHnyOUFlhSlGamDwrfssh_rDC_Rgsw/exec';
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -1598,6 +1598,10 @@
 
             let baseTotal = 0;
             let itemsDetailArr = [];
+            
+            // Lấy danh sách duy nhất các Mã SP có trong giỏ hàng web
+            let productCodesList = [...new Set(cart.map(i => String(i.id).trim()))].join('-');
+
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
                 itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}]`);
@@ -1608,7 +1612,8 @@
             const receiveAmount = baseTotal - deposit + extraFee;
 
             // Soạn tin nhắn Telegram
-            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n\n`;
+            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n`;
+            msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
             msg += `📅 *Ngày mượn:* ${formatDateVN(rentalVal)}\n`;
@@ -1634,7 +1639,7 @@
             btn.disabled = true;
 
             try {
-                // 1. GỬI TRỰC TIẾP VỀ TELEGRAM (Bảo đảm 100% nhận thông báo chuông)
+                // 1. GỬI VỀ TELEGRAM
                 fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1645,8 +1650,9 @@
                     })
                 }).catch(e => console.error("Lỗi Telegram:", e));
 
-                // 2. GỬI SANG GOOGLE APPS SCRIPT ĐỂ GHI SHEET "HOA_DON"
+                // 2. GỬI SANG GOOGLE APPS SCRIPT KÈM THEO MÃ SẢN PHẨM CỦA WEB
                 const formData = new URLSearchParams();
+                formData.append('productCode', productCodesList); // Gửi mã sản phẩm
                 formData.append('timeString', timeString);
                 formData.append('name', nameVal);
                 formData.append('phone', phoneVal);
