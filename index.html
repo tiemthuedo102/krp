@@ -1602,7 +1602,8 @@
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
+                // --- ĐÃ SỬA: Loại bỏ hàm formatMoney và chữ "đ" ở dữ liệu gửi đi ---
+                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${i.itemTotal}]`);
             });
             
             const { extraFee, rentalDays } = calculateExtraFee(baseTotal);
@@ -1618,6 +1619,7 @@
             msg += `📅 *Ngày trả:* ${formatDateVN(returnVal)} (Thuê ${rentalDays} ngày)\n\n`;
             
             cart.forEach((i, idx) => { 
+                // --- GIỮ NGUYÊN BÁO CÁO TELEGRAM ĐẸP MẮT ---
                 msg += `${idx + 1}. *${i.name}*\n   - Mã: \`${i.id}\`\n   - Size: ${i.size}\n   - SL: ${i.qty}\n   - Thành tiền: ${formatMoney(i.itemTotal)}đ\n\n`; 
             });
             msg += `➖➖➖➖➖➖➖\n`;
@@ -1646,12 +1648,11 @@
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
                 
-                // --- ĐOẠN ĐÃ SỬA: CHỈ GỬI SỐ ĐỂ SHEET NHẬN DIỆN LÀ SỐ ---
+                // --- ĐÃ SỬA: CHỈ GỬI SỐ CHO SHEET ---
                 formData.append('total', baseTotal);
                 formData.append('deposit', deposit);
                 formData.append('extraFee', extraFee);
                 formData.append('remaining', receiveAmount);
-                // --------------------------------------------------------
 
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
