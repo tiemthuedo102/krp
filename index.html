@@ -1602,7 +1602,6 @@
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                // ĐÃ BỔ SUNG: Gửi kèm Thành tiền của từng mã sản phẩm
                 itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
             });
             
@@ -1611,7 +1610,7 @@
             const receiveAmount = baseTotal - deposit + extraFee;
 
             // Tin nhắn Telegram
-            let msg = `🔔 *ĐƠN ĐẶT THUẾ ĐỒ (${timeString})*\n`;
+            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
@@ -1646,10 +1645,13 @@
                 formData.append('rentalDate', formatDateVN(rentalVal));
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
-                formData.append('total', `${formatMoney(baseTotal)}đ`);
-                formData.append('deposit', `${formatMoney(deposit)}đ`);
-                formData.append('extraFee', `${formatMoney(extraFee)}đ`);
-                formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
+                
+                // --- ĐOẠN ĐÃ SỬA: CHỈ GỬI SỐ ĐỂ SHEET NHẬN DIỆN LÀ SỐ ---
+                formData.append('total', baseTotal);
+                formData.append('deposit', deposit);
+                formData.append('extraFee', extraFee);
+                formData.append('remaining', receiveAmount);
+                // --------------------------------------------------------
 
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
