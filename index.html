@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1656,32 +1657,44 @@
             document.getElementById('orderPriceDisplay').innerText = `Tạm tính: ${formatMoney(currentNumericPrice * qty)}đ`; 
         }
 
+        // ĐÃ KHẮC PHỤC LỖI LOGIC: Kiểm tra số lượng tồn và thêm vào giỏ chuẩn xác
         function addToCart() {
             const qtyInput = document.getElementById('orderQty');
             let qty = parseInt(qtyInput.value, 10) || 1;
+            
+            const itemId = document.getElementById('orderProductId').value;
+            const itemSize = document.getElementById('orderSize').value;
+            
+            // Tìm sản phẩm này trong giỏ hàng (cùng ID, cùng Size)
+            const ex = cart.findIndex(i => i.id === itemId && i.size === itemSize);
+            let existingQty = ex > -1 ? cart[ex].qty : 0;
 
-            if (qty > currentMaxQuantity) {
-                qty = currentMaxQuantity;
-                qtyInput.value = currentMaxQuantity;
-                showCustomAlert(`Số lượng vượt quá tồn kho (tối đa ${currentMaxQuantity}). Đã tự động điều chỉnh.`);
-                return;
+            // Kiểm tra tổng số lượng đã có trong giỏ + sắp thêm vào
+            if (existingQty + qty > currentMaxQuantity) {
+                qty = currentMaxQuantity - existingQty;
+                if (qty <= 0) {
+                    showCustomAlert(`Bạn đã thêm tối đa số lượng (${currentMaxQuantity}) của sản phẩm này vào giỏ hàng!`);
+                    return; // Chặn thêm nếu kho đã hết nhẵn
+                }
+                showCustomAlert(`Chỉ có thể thêm ${qty} bộ. Tổng giỏ hàng của bạn đã đạt mức tối đa ${currentMaxQuantity} bộ có sẵn.`);
             }
 
             const item = { 
-                id: document.getElementById('orderProductId').value, 
+                id: itemId, 
                 name: document.getElementById('orderProductName').innerText, 
                 numericPrice: currentNumericPrice, 
                 itemTotal: currentNumericPrice * qty, 
-                size: document.getElementById('orderSize').value, 
+                size: itemSize, 
                 qty: qty 
             };
-            const ex = cart.findIndex(i => i.id === item.id && i.size === item.size);
+
             if (ex > -1) { 
                 cart[ex].qty += item.qty; 
                 cart[ex].itemTotal = cart[ex].qty * cart[ex].numericPrice; 
             } else {
                 cart.push(item);
             }
+            
             document.getElementById('cartCountBadge').innerText = cart.reduce((sum, i) => sum + i.qty, 0); 
             closeModal('orderModal');
         }
@@ -1861,9 +1874,13 @@
             const year = now.getFullYear();
             const timeString = `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
 
+            // ĐÃ KHẮC PHỤC LỖI LOGIC: Không dùng Set để lọc trùng, nối thêm size vào mã để hiển thị chính xác
             let baseTotal = 0;
             let itemsDetailArr = [];
-            let productCodesList = [...new Set(cart.map(i => String(i.id).trim()))].join('-');
+            let productCodesList = cart.map(i => `${String(i.id).trim()} (${i.size})`).join(', ');
+            
+            // Tính tổng số lượng tất cả các món để gửi đi
+            let totalItemsCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
@@ -1886,6 +1903,10 @@
                 msg += `${idx + 1}. *${i.name}*\n   - Mã: \`${i.id}\`\n   - Size: ${i.size}\n   - SL: ${i.qty}\n   - Thành tiền: ${formatMoney(i.itemTotal)}đ\n\n`; 
             });
             msg += `➖➖➖➖➖➖➖\n`;
+            
+            // ĐÃ KHẮC PHỤC LỖI LOGIC: Thêm thông báo tổng số lượng vào Telegram
+            msg += `📦 *Tổng số lượng SP:* ${totalItemsCount} bộ\n`;
+            
             if (extraFee > 0) {
                 msg += `⏱ *Số ngày thuê:* ${rentalDays} ngày (Phụ thu: +${formatMoney(extraFee)}đ)\n`;
             }
@@ -1914,6 +1935,7 @@
                 formData.append('deposit', deposit);
                 formData.append('extraFee', extraFee);
                 formData.append('remaining', receiveAmount);
+                formData.append('totalQty', totalItemsCount); // Đẩy luôn tổng số lượng sang Google Script/Appsheet nếu sau này bạn cần
 
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
