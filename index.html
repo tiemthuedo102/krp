@@ -774,13 +774,24 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwJoYmxB9TSIERvv6Cnu7BlVy9hp9Q_lNeDPR5tD_1KaReSDBxSms0vzMpRYTo4QyY6yg/exec';
-        const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
-        const TELEGRAM_CHAT_ID = '-1004400070779';
+        
+        // 1. LINK GHI ĐƠN HÀNG (Thay link mới tạo vào đây để sửa lỗi trùng mã HĐ)
+        // Đây là Web App của file chứa sheet "don_hang" và "chi_tiet_DH"
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwl66h1AEpaDCawgyW51rioK986_odu0_VKxo3EtO_sXQ16g7uTLke9RRnZS57Bs-vgow/exec';
+        
+        // 2. LINK FILE DỮ LIỆU (Giữ nguyên)
+        // Đây là link chia sẻ trực tiếp của file chứa sheet "data" (kho hàng) để web tự lấy ảnh/giá
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
 
-        // ⚠️ DÁN LINK WEB APP GOOGLE SCRIPT AI Ở ĐÂY
-        const GOOGLE_SCRIPT_AI_URL = 'https://script.google.com/macros/s/AKfycbyTd3ZpmkbSAXCG8sOfv8Wxml_ZqGpRfJGj0FFtaJQA5Fu-o10ggUp-Bty5wergEDylwA/exec';
+        // 3. LINK TÍCH HỢP GEMINI AI (Giữ nguyên)
+        // Đây là Web App của file Apps Script nhận diện hình ảnh
+        const GOOGLE_SCRIPT_AI_URL = 'https://script.google.com/macros/s/AKfycbwcSYXeh8HVfnGyI6JxKH2kNSO4IFnEYFBd54vAArU9SvxZw38P87We4awZJIjxJrH-Hg/exec';
+
+        // CẤU HÌNH TELEGRAM (Giữ nguyên)
+        const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
+        const TELEGRAM_CHAT_ID = '-1004400070779';
+        
+        // ======================================================
 
         let allProducts = [];
         let cart = []; 
@@ -831,7 +842,6 @@
             showCustomAlert(`<b>📌 ${title}</b><br><br>${content}`);
         }
 
-        // TỐI ƯU LOAD ẢNH: Hàm này giờ cho phép truyền sizeStr để lấy ảnh độ phân giải thấp (w400) hoặc cao (w1200)
         function convertGoogleDriveUrl(url, sizeStr = 'w1200') {
             if (!url) return '';
             const cleanUrl = url.trim();
@@ -931,7 +941,6 @@
                 const img4Idx = findHeader(['image4', 'img4', 'anh4', 'ảnh 4', 'hinh4', 'hình 4']);
                 const img5Idx = findHeader(['image5', 'img5', 'anh5', 'ảnh 5', 'hinh5', 'hình 5']);
 
-                // KHÔNG convert URL ngay lập tức, giữ lại link gốc để render grid và album tùy chọn kích cỡ
                 allProducts = rows.slice(1).map((parts, idx) => {
                     const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx] : (parts[1] || '');
                     if (!prodName) return null;
@@ -1006,7 +1015,7 @@
                     <div class="dropdown-content">
                         <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                         <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
-                        <a onclick="showPolicyDetail('Quy định hoàn trả đồ', '1. Đơn giá thuê áp dụng tối đa 3 ngày.<br>2. Từ ngày thứ 4 trở đi, phụ thu 20%/ngày dôi ra.<br>3. Trang phục và đạo cụ phải được giữ gìn sạchẽ, không rách hay làm bẩn không tẩy được.')">🔄 Quy định hoàn trả đồ</a>
+                        <a onclick="showPolicyDetail('Quy định hoàn trả đồ', '1. Đơn giá thuê áp dụng tối đa 3 ngày.<br>2. Từ ngày thứ 4 trở đi, phụ thu 20%/ngày dôi ra.<br>3. Trang phục và đạo cụ phải được giữ gìn sạch sẽ, không rách hay làm bẩn không tẩy được.')">🔄 Quy định hoàn trả đồ</a>
                     </div>
                 </div>
             `;
@@ -1325,13 +1334,11 @@
             const paginatedItems = filtered.slice(startIndex, endIndex);
 
             paginatedItems.forEach(product => {
-                // TỐI ƯU LOAD ẢNH: Render ảnh lưới với tham số =w400 để lấy ảnh siêu nhẹ (chỉ ~30KB) thay vì lấy ảnh HD 1200px
                 const mainImgRaw = product.image1 && product.image1.trim() !== '' ? product.image1 : '';
                 const mainImg = mainImgRaw ? convertGoogleDriveUrl(mainImgRaw, 'w400') : 'https://via.placeholder.com/400?text=Chưa+có+ảnh';
                 
                 const quantityText = product.quantity !== '' ? ` | Số lượng: ${product.quantity}` : '';
                 
-                // TỐI ƯU LUỒNG: Thêm thuộc tính loading="lazy" và decoding="async" để không làm đơ trình duyệt khi lướt
                 grid.innerHTML += `
                     <div class="product-card">
                         <img class="main-img" src="${mainImg}" loading="lazy" decoding="async" alt="${product.name}" onclick="openAlbum('${product.id}')" onerror="this.src='https://via.placeholder.com/400?text=Lỗi+Ảnh'">
@@ -1403,7 +1410,6 @@
             if (!p) return;
             document.getElementById('albumTitle').innerText = p.name;
             
-            // TỐI ƯU LOAD ẢNH: Khi bấm xem chi tiết, hệ thống mới bắt đầu gọi ảnh chất lượng cao (=w1200) từ Drive
             currentSlideImages = [p.image1, p.image2, p.image3, p.image4, p.image5]
                 .filter(img => img && img.trim() !== '')
                 .map(img => convertGoogleDriveUrl(img, 'w1200')); 
@@ -1955,6 +1961,7 @@
                     })
                 }).catch(e => console.error("Lỗi Telegram:", e));
 
+                // Gửi dữ liệu tới link Web App ghi đơn hàng (GOOGLE_APPS_SCRIPT_URL)
                 const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
