@@ -1081,6 +1081,7 @@
             });
         }
 
+        // ĐÃ SỬA LỖI: Trích xuất màu sắc trung lập, loại bỏ chữ "đầm múa váy áo dài" gán cứng
         function extractFallbackKeywordsFromImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1101,7 +1102,7 @@
                             r += data[i]; g += data[i+1]; b += data[i+2];
                             count++;
                         }
-                        if (count === 0) return resolve("đầm múa áo dài trắng");
+                        if (count === 0) return resolve("trang phục"); // Từ khóa trung lập
                         r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
                         
                         let colorWord = "";
@@ -1111,11 +1112,12 @@
                         else if (r > 180 && g > 100 && b > 140) colorWord = "hồng";
                         else if (r > 180 && g > 160 && b < 100) colorWord = "vàng";
                         else if (r < 70 && g < 70 && b < 70) colorWord = "đen";
-                        else colorWord = "trắng xanh";
+                        else if (r > 200 && g > 200 && b > 200) colorWord = "trắng";
+                        else colorWord = "nhiều màu";
 
-                        resolve(`đầm múa váy áo dài ${colorWord}`);
+                        resolve(colorWord); // Chỉ trả về tên màu sắc
                     };
-                    img.onerror = () => resolve("đầm múa");
+                    img.onerror = () => resolve("trang phục");
                 };
             });
         }
@@ -1157,13 +1159,15 @@
 
                 if (!searchKeywords) {
                     searchKeywords = await extractFallbackKeywordsFromImage(file);
+                    document.getElementById('currentCategoryTitle').innerText = `✨ AI phản hồi chậm, lọc theo màu sắc: "${searchKeywords}"`;
+                } else {
+                    document.getElementById('currentCategoryTitle').innerText = `✨ AI phân tích và gợi ý: "${searchKeywords}"`;
                 }
 
                 isAISearchMode = true;
                 currentActiveCategory = 'Tất cả';
                 currentActiveSubcategory = null;
                 document.getElementById('searchInput').value = searchKeywords;
-                document.getElementById('currentCategoryTitle').innerText = `✨ Trang phục tương tự AI gợi ý: "${searchKeywords}"`;
                 currentPage = 1;
                 renderFilteredProducts();
             } catch (error) {
@@ -1173,7 +1177,9 @@
                 currentActiveCategory = 'Tất cả';
                 currentActiveSubcategory = null;
                 document.getElementById('searchInput').value = fallbackKw;
-                document.getElementById('currentCategoryTitle').innerText = `✨ Các mẫu trang phục tương tự gợi ý:`;
+                
+                // ĐÃ SỬA LỖI: Báo cho người dùng biết AI đang lỗi nên nó tự lọc theo màu sắc
+                document.getElementById('currentCategoryTitle').innerText = `✨ Máy chủ AI đang bận, tự động lọc theo màu sắc: "${fallbackKw}"`;
                 currentPage = 1;
                 renderFilteredProducts();
             } finally {
@@ -1201,14 +1207,12 @@
             }
         }
 
-        // ĐÃ NÂNG CẤP THUẬT TOÁN ĐỂ ĐẠT ĐỘ CHÍNH XÁC 85%
         function calculateSimilarityScore(product, rawKeyword) {
             const normKeyword = removeVN(rawKeyword);
             const normId = removeVN(product.id);
             const normName = removeVN(product.name);
             const normCat = removeVN(`${product.category} ${product.subcategory}`);
 
-            // Khớp chính xác mã SP
             if (normId === normKeyword || normId.replace('.png', '') === normKeyword) {
                 return 100;
             }
@@ -1216,7 +1220,6 @@
                 return 100;
             }
 
-            // Loại bỏ từ vô nghĩa và lọc từ khóa chính
             const stopWords = ['va', 'co', 'bo', 'trang', 'phuc', 'do', 'cho', 'thue', 'mau', 'cua', 'voi', 'hinh', 'anh', 'nhung', 'cac', 'chiec', 'mot'];
             const tokens = normKeyword.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
                                       .split(/\s+/)
@@ -1234,13 +1237,12 @@
                 } else {
                     totalWeight += 1;
                     
-                    // Ưu tiên khớp ĐÚNG TỪ (Exact word boundary) thay vì khớp MỘT PHẦN (includes) để tăng tính chính xác
                     const regexExact = new RegExp(`\\b${token}\\b`);
                     
                     if (regexExact.test(normName)) {
                         matchedWeight += 1.0; 
                     } else if (normName.includes(token)) {
-                        matchedWeight += 0.5; // Khớp 1 phần chữ sẽ bị giảm phân nửa điểm
+                        matchedWeight += 0.5; 
                     } else if (regexExact.test(normCat)) {
                         matchedWeight += 0.8;
                     } else if (normCat.includes(token)) {
@@ -1254,7 +1256,6 @@
 
             return (matchedWeight / totalWeight) * 100;
         }
-        // ==========================================================
 
         function renderFilteredProducts() {
             const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
@@ -1278,13 +1279,11 @@
                     score: calculateSimilarityScore(p, keyword)
                 }));
 
-                // ƯU TIÊN 1: Bộ lọc siêu khắt khe - Phải đạt mức 85% mới coi là khớp chuẩn
                 let highMatches = scoredProducts
                     .filter(item => item.score >= 85)
                     .sort((a, b) => b.score - a.score)
                     .map(item => item.product);
 
-                // ƯU TIÊN 2: Nâng bộ lọc dự phòng từ 25% lên 40% để chống trả kết quả vớ vẩn
                 if (highMatches.length === 0 || (isAISearchMode && highMatches.length < 4)) {
                     highMatches = scoredProducts
                         .filter(item => item.score >= 40)
