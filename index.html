@@ -1039,7 +1039,6 @@
             renderFilteredProducts();
         }
 
-        // ================= XỬ LÝ AI SEARCH & SO KHỚP TƯƠNG ĐƯƠNG (~85%) =================
         function removeVN(str) {
             if (!str) return '';
             return str.normalize('NFD')
@@ -1081,7 +1080,6 @@
             });
         }
 
-        // ĐÃ SỬA LỖI: Trích xuất màu sắc trung lập, loại bỏ chữ "đầm múa váy áo dài" gán cứng
         function extractFallbackKeywordsFromImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1102,7 +1100,7 @@
                             r += data[i]; g += data[i+1]; b += data[i+2];
                             count++;
                         }
-                        if (count === 0) return resolve("trang phục"); // Từ khóa trung lập
+                        if (count === 0) return resolve("trang phục"); 
                         r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
                         
                         let colorWord = "";
@@ -1115,7 +1113,7 @@
                         else if (r > 200 && g > 200 && b > 200) colorWord = "trắng";
                         else colorWord = "nhiều màu";
 
-                        resolve(colorWord); // Chỉ trả về tên màu sắc
+                        resolve(colorWord); 
                     };
                     img.onerror = () => resolve("trang phục");
                 };
@@ -1150,7 +1148,9 @@
 
             document.getElementById('searchInput').value = '';
             document.getElementById('currentCategoryTitle').innerText = "✨ AI đang phân tích hình ảnh...";
-            document.getElementById('productGrid').innerHTML = '<div class="ai-loading-text">Gemini đang quét kiểu dáng & màu sắc trang phục... ⏳</div>';
+            
+            // ĐÃ ĐỔI HIỆU ỨNG LOADING: Thêm chữ tuổi/kiểu dáng
+            document.getElementById('productGrid').innerHTML = '<div class="ai-loading-text">Gemini đang quét độ tuổi, kiểu dáng & màu sắc trang phục... ⏳</div>';
             document.getElementById('paginationContainer').innerHTML = ''; 
 
             try {
@@ -1159,9 +1159,9 @@
 
                 if (!searchKeywords) {
                     searchKeywords = await extractFallbackKeywordsFromImage(file);
-                    document.getElementById('currentCategoryTitle').innerText = `✨ AI phản hồi chậm, lọc theo màu sắc: "${searchKeywords}"`;
+                    document.getElementById('currentCategoryTitle').innerText = `✨ Máy chủ AI bận, tự động lọc theo màu sắc: "${searchKeywords}"`;
                 } else {
-                    document.getElementById('currentCategoryTitle').innerText = `✨ AI phân tích và gợi ý: "${searchKeywords}"`;
+                    document.getElementById('currentCategoryTitle').innerText = `✨ Trang phục tương tự AI gợi ý: "${searchKeywords}"`;
                 }
 
                 isAISearchMode = true;
@@ -1177,8 +1177,6 @@
                 currentActiveCategory = 'Tất cả';
                 currentActiveSubcategory = null;
                 document.getElementById('searchInput').value = fallbackKw;
-                
-                // ĐÃ SỬA LỖI: Báo cho người dùng biết AI đang lỗi nên nó tự lọc theo màu sắc
                 document.getElementById('currentCategoryTitle').innerText = `✨ Máy chủ AI đang bận, tự động lọc theo màu sắc: "${fallbackKw}"`;
                 currentPage = 1;
                 renderFilteredProducts();
@@ -1189,10 +1187,17 @@
 
         async function analyzeImageWithGemini(base64Data, mimeType) {
             try {
+                // ĐÃ THÊM: Gửi Prompt chuyên sâu lên Google Apps Script 
+                const aiPrompt = "Phân tích trang phục trong ảnh. Trả về đúng 1 dòng chứa các từ khóa ngắn gọn (không có dấu phẩy), cách nhau bằng khoảng trắng, tập trung vào 3 yếu tố chính: 1. Độ tuổi/Đối tượng (người lớn, trẻ em, bé gái, bé trai), 2. Hình dạng/Kiểu dáng (áo dài, váy múa, tứ thân, cổ trang, bà ba, đầm dạ hội, áo thun, múa ô...), 3. Màu sắc chủ đạo (đỏ, xanh, vàng, trắng...). Ví dụ kết quả: trẻ em váy múa xòe hồng trắng";
+
                 const response = await fetch(GOOGLE_SCRIPT_AI_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify({ base64Data: base64Data, mimeType: mimeType })
+                    body: JSON.stringify({ 
+                        base64Data: base64Data, 
+                        mimeType: mimeType,
+                        prompt: aiPrompt
+                    })
                 });
 
                 const data = await response.json();
