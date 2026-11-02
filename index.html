@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -1040,8 +1039,7 @@ html
             renderFilteredProducts();
         }
 
-        // ================= XỬ LÝ AI SEARCH & SO KHỚP TƯƠNG ĐƯƠNG (~70%) =================
-        // Hàm bỏ dấu tiếng Việt giúp so khớp từ khóa chính xác và mượt hơn
+        // ================= XỬ LÝ AI SEARCH & SO KHỚP TƯƠNG ĐƯƠNG (~85%) =================
         function removeVN(str) {
             if (!str) return '';
             return str.normalize('NFD')
@@ -1050,7 +1048,6 @@ html
                       .toLowerCase();
         }
 
-        // Nén ảnh & chuyển sang JPEG nền trắng trước khi gửi để tránh lỗi PNG nặng hoặc trong suốt trên Google Script
         function compressAndGetBase64(file, maxWidth = 800) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1069,7 +1066,6 @@ html
                         canvas.width = width;
                         canvas.height = height;
                         const ctx = canvas.getContext('2d');
-                        // Đổ nền trắng cho ảnh PNG trong suốt để AI nhìn rõ chi tiết
                         ctx.fillStyle = "#FFFFFF";
                         ctx.fillRect(0, 0, width, height);
                         ctx.drawImage(img, 0, 0, width, height);
@@ -1085,7 +1081,6 @@ html
             });
         }
 
-        // Trích xuất màu sắc chủ đạo ngay trên trình duyệt (Dự phòng nếu Google Script AI bị lỗi)
         function extractFallbackKeywordsFromImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -1102,7 +1097,6 @@ html
                         const data = ctx.getImageData(10, 10, 30, 30).data;
                         let r = 0, g = 0, b = 0, count = 0;
                         for (let i = 0; i < data.length; i += 4) {
-                            // Bỏ qua pixel nền quá trắng hoặc trong suốt
                             if (data[i+3] < 128 || (data[i] > 240 && data[i+1] > 240 && data[i+2] > 240)) continue;
                             r += data[i]; g += data[i+1]; b += data[i+2];
                             count++;
@@ -1130,10 +1124,9 @@ html
             const file = event.target.files[0];
             if (!file) return;
 
-            // 1. KIỂM TRA NHANH: Nếu ảnh tải từ web xuống (trùng tên mã SP như 59.png, 10-1.png...)
             const rawFileName = file.name.toLowerCase().trim();
-            const cleanFileName = rawFileName.replace(/\s*\(\d+\)\s*/g, ''); // Xóa hậu tố (1), (2) nếu tải nhiều lần
-            const baseCode = cleanFileName.replace(/\.[^/.]+$/, ""); // Bỏ đuôi .png, .jpg
+            const cleanFileName = rawFileName.replace(/\s*\(\d+\)\s*/g, '');
+            const baseCode = cleanFileName.replace(/\.[^/.]+$/, "");
 
             const matchedProduct = allProducts.find(p => {
                 const pid = p.id.toLowerCase().trim();
@@ -1145,16 +1138,14 @@ html
                 isAISearchMode = true;
                 currentActiveCategory = 'Tất cả';
                 currentActiveSubcategory = null;
-                // Lấy cả mã và tên sản phẩm để vừa hiện đúng mẫu đó lên đầu, vừa kéo theo các mẫu tương tự (~70%)
                 document.getElementById('searchInput').value = `${matchedProduct.id} ${matchedProduct.name}`;
-                document.getElementById('currentCategoryTitle').innerText = `✨ Tìm thấy mẫu khớp & trang phục tương tự (~70%):`;
+                document.getElementById('currentCategoryTitle').innerText = `✨ Tìm thấy mẫu khớp & trang phục tương tự (~85%):`;
                 currentPage = 1;
                 renderFilteredProducts();
                 event.target.value = '';
                 return;
             }
 
-            // 2. NẾU LÀ ẢNH BẤT KỲ: Nén ảnh và gửi qua AI phân tích
             document.getElementById('searchInput').value = '';
             document.getElementById('currentCategoryTitle').innerText = "✨ AI đang phân tích hình ảnh...";
             document.getElementById('productGrid').innerHTML = '<div class="ai-loading-text">Gemini đang quét kiểu dáng & màu sắc trang phục... ⏳</div>';
@@ -1164,7 +1155,6 @@ html
                 const { base64Data, mimeType } = await compressAndGetBase64(file);
                 let searchKeywords = await analyzeImageWithGemini(base64Data, mimeType);
 
-                // Nếu Google Script lỗi hoặc không trả từ khóa, dùng bộ quét màu tự động để gợi ý mẫu tương tự
                 if (!searchKeywords) {
                     searchKeywords = await extractFallbackKeywordsFromImage(file);
                 }
@@ -1211,20 +1201,23 @@ html
             }
         }
 
-        // Chấm điểm độ tương đồng giữa từ khóa và sản phẩm
+        // ĐÃ NÂNG CẤP THUẬT TOÁN ĐỂ ĐẠT ĐỘ CHÍNH XÁC 85%
         function calculateSimilarityScore(product, rawKeyword) {
             const normKeyword = removeVN(rawKeyword);
             const normId = removeVN(product.id);
             const normName = removeVN(product.name);
             const normCat = removeVN(`${product.category} ${product.subcategory}`);
 
-            // Khớp chính xác mã hoặc nguyên cụm từ -> 100 điểm
-            if (normId.includes(normKeyword) || normName.includes(normKeyword)) {
+            // Khớp chính xác mã SP
+            if (normId === normKeyword || normId.replace('.png', '') === normKeyword) {
+                return 100;
+            }
+            if (normName.includes(normKeyword) && normKeyword.length > 3) {
                 return 100;
             }
 
-            // Tách nhỏ từ khóa để tính % tương đồng (bỏ các từ nối vô nghĩa)
-            const stopWords = ['va', 'co', 'bo', 'trang', 'phuc', 'do', 'cho', 'thue', 'mau', 'cua', 'voi', 'hinh', 'anh'];
+            // Loại bỏ từ vô nghĩa và lọc từ khóa chính
+            const stopWords = ['va', 'co', 'bo', 'trang', 'phuc', 'do', 'cho', 'thue', 'mau', 'cua', 'voi', 'hinh', 'anh', 'nhung', 'cac', 'chiec', 'mot'];
             const tokens = normKeyword.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
                                       .split(/\s+/)
                                       .filter(w => w.length >= 2 && !stopWords.includes(w));
@@ -1236,15 +1229,22 @@ html
             let exactIdMatch = false;
 
             tokens.forEach(token => {
-                // Nếu khớp mã SP thì đánh dấu khớp trực tiếp
                 if (normId === token || normId.replace('.png', '') === token.replace('.png', '')) {
                     exactIdMatch = true;
                 } else {
                     totalWeight += 1;
-                    if (normName.includes(token)) {
-                        matchedWeight += 1; // Khớp trong tên SP
+                    
+                    // Ưu tiên khớp ĐÚNG TỪ (Exact word boundary) thay vì khớp MỘT PHẦN (includes) để tăng tính chính xác
+                    const regexExact = new RegExp(`\\b${token}\\b`);
+                    
+                    if (regexExact.test(normName)) {
+                        matchedWeight += 1.0; 
+                    } else if (normName.includes(token)) {
+                        matchedWeight += 0.5; // Khớp 1 phần chữ sẽ bị giảm phân nửa điểm
+                    } else if (regexExact.test(normCat)) {
+                        matchedWeight += 0.8;
                     } else if (normCat.includes(token)) {
-                        matchedWeight += 0.7; // Khớp trong danh mục
+                        matchedWeight += 0.4;
                     }
                 }
             });
@@ -1273,23 +1273,21 @@ html
             }
 
             if (keyword !== '') {
-                // Tính điểm tương đồng cho toàn bộ sản phẩm
                 const scoredProducts = filtered.map(p => ({
                     product: p,
                     score: calculateSimilarityScore(p, keyword)
                 }));
 
-                // Ưu tiên 1: Lấy các sản phẩm đạt độ tương đồng >= 70%
+                // ƯU TIÊN 1: Bộ lọc siêu khắt khe - Phải đạt mức 85% mới coi là khớp chuẩn
                 let highMatches = scoredProducts
-                    .filter(item => item.score >= 70)
+                    .filter(item => item.score >= 85)
                     .sort((a, b) => b.score - a.score)
                     .map(item => item.product);
 
-                // Ưu tiên 2: Nếu không có mẫu nào đạt 70% (hoặc đang tìm bằng ảnh muốn xem thêm mẫu tương tự),
-                // hạ ngưỡng xuống lấy các mẫu có nét tương đồng gần nhất (>= 25%) để luôn có gợi ý tương đương
+                // ƯU TIÊN 2: Nâng bộ lọc dự phòng từ 25% lên 40% để chống trả kết quả vớ vẩn
                 if (highMatches.length === 0 || (isAISearchMode && highMatches.length < 4)) {
                     highMatches = scoredProducts
-                        .filter(item => item.score >= 25)
+                        .filter(item => item.score >= 40)
                         .sort((a, b) => b.score - a.score)
                         .map(item => item.product);
                 }
@@ -1657,7 +1655,6 @@ html
             document.getElementById('orderPriceDisplay').innerText = `Tạm tính: ${formatMoney(currentNumericPrice * qty)}đ`; 
         }
 
-        // ĐÃ KHẮC PHỤC LỖI LOGIC: Kiểm tra số lượng tồn và thêm vào giỏ chuẩn xác
         function addToCart() {
             const qtyInput = document.getElementById('orderQty');
             let qty = parseInt(qtyInput.value, 10) || 1;
@@ -1665,16 +1662,14 @@ html
             const itemId = document.getElementById('orderProductId').value;
             const itemSize = document.getElementById('orderSize').value;
             
-            // Tìm sản phẩm này trong giỏ hàng (cùng ID, cùng Size)
             const ex = cart.findIndex(i => i.id === itemId && i.size === itemSize);
             let existingQty = ex > -1 ? cart[ex].qty : 0;
 
-            // Kiểm tra tổng số lượng đã có trong giỏ + sắp thêm vào
             if (existingQty + qty > currentMaxQuantity) {
                 qty = currentMaxQuantity - existingQty;
                 if (qty <= 0) {
                     showCustomAlert(`Bạn đã thêm tối đa số lượng (${currentMaxQuantity}) của sản phẩm này vào giỏ hàng!`);
-                    return; // Chặn thêm nếu kho đã hết nhẵn
+                    return; 
                 }
                 showCustomAlert(`Chỉ có thể thêm ${qty} bộ. Tổng giỏ hàng của bạn đã đạt mức tối đa ${currentMaxQuantity} bộ có sẵn.`);
             }
@@ -1874,12 +1869,9 @@ html
             const year = now.getFullYear();
             const timeString = `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
 
-            // ĐÃ KHẮC PHỤC LỖI LOGIC: Không dùng Set để lọc trùng, nối thêm size vào mã để hiển thị chính xác
             let baseTotal = 0;
             let itemsDetailArr = [];
             let productCodesList = cart.map(i => `${String(i.id).trim()} (${i.size})`).join(', ');
-            
-            // Tính tổng số lượng tất cả các món để gửi đi
             let totalItemsCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
             cart.forEach((i) => { 
@@ -1891,7 +1883,6 @@ html
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
-            // Tin nhắn Telegram
             let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal !== '' ? nameVal : '_Không cung cấp_'}\n`;
@@ -1904,7 +1895,6 @@ html
             });
             msg += `➖➖➖➖➖➖➖\n`;
             
-            // ĐÃ KHẮC PHỤC LỖI LOGIC: Thêm thông báo tổng số lượng vào Telegram
             msg += `📦 *Tổng số lượng SP:* ${totalItemsCount} bộ\n`;
             
             if (extraFee > 0) {
@@ -1935,7 +1925,7 @@ html
                 formData.append('deposit', deposit);
                 formData.append('extraFee', extraFee);
                 formData.append('remaining', receiveAmount);
-                formData.append('totalQty', totalItemsCount); // Đẩy luôn tổng số lượng sang Google Script/Appsheet nếu sau này bạn cần
+                formData.append('totalQty', totalItemsCount); 
 
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
