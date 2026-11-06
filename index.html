@@ -716,7 +716,7 @@
 
                 <div class="form-group">
                     <label for="customerAddress">Địa chỉ nhận hàng (<span style="color: red;">*</span>):</label>
-                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhập địa chỉ nhận hàng của bạn" type="text" />
+                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhập địa chỉ giao/nhận hàng cụ thể" type="text" />
                     <small id="addressError" style="color: #e74c3c; display: none; margin-top: 4px; font-size: 12px;">Vui lòng nhập địa chỉ nhận hàng.</small>
                 </div>
 
@@ -782,16 +782,16 @@
 
         // ================= CẤU HÌNH HỆ THỐNG =================
         
-        // 1. LINK GHI ĐƠN HÀNG
+        // 1. LINK GHI ĐƠN HÀNG (Google Apps Script Web App)
         const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfNgDg0qGX2nTYpUHzoxE_LUzPa1cnLvZegoUnrBIkMLQcYABP3Zy3Q_qRWPOnsk8uog/exec';
         
-        // 2. LINK FILE DỮ LIỆU
+        // 2. LINK FILE DỮ LIỆU SẢN PHẨM
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
 
         // 3. LINK TÍCH HỢP GEMINI AI
         const GOOGLE_SCRIPT_AI_URL = 'https://script.google.com/macros/s/AKfycbwcSYXeh8HVfnGyI6JxKH2kNSO4IFnEYFBd54vAArU9SvxZw38P87We4awZJIjxJrH-Hg/exec';
 
-        // CẤU HÌNH TELEGRAM
+        // CẤU HÌNH TELEGRAM BOT
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         
@@ -1214,8 +1214,8 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify({ 
                         base64Data: base64Data, 
-                        mimeType: mimeType,
-                        prompt: aiPrompt
+                        mimeType: mimeType, 
+                        prompt: aiPrompt 
                     })
                 });
 
@@ -1268,7 +1268,7 @@
                     } else if (normName.includes(token)) {
                         matchedWeight += 0.5; 
                     } else if (regexExact.test(normCat)) {
-                        matchedWeight += 0.8;
+                        matchedWeight += 0.8; 
                     } else if (normCat.includes(token)) {
                         matchedWeight += 0.4;
                     }
@@ -1867,7 +1867,7 @@
 
             let hasError = false;
 
-            // KIỂM TRA HỌ VÀ TÊN BẮT BUỘC
+            // 1. KIỂM TRA HỌ TÊN
             if (!nameVal) {
                 nameError.style.display = 'block';
                 if (!hasError) nameInput.focus();
@@ -1876,7 +1876,7 @@
                 nameError.style.display = 'none';
             }
 
-            // KIỂM TRA SỐ ĐIỆN THOẠI
+            // 2. KIỂM TRA SỐ ĐIỆN THOẠI
             if (!isValidVietnamesePhoneNumber(phoneVal)) {
                 phoneError.style.display = 'block';
                 if (!hasError) phoneInput.focus();
@@ -1885,7 +1885,7 @@
                 phoneError.style.display = 'none';
             }
 
-            // KIỂM TRA ĐỊA CHỈ BẮT BUỘC
+            // 3. KIỂM TRA ĐỊA CHỈ NHẬN HÀNG
             if (!addressVal) {
                 addressError.style.display = 'block';
                 if (!hasError) addressInput.focus();
@@ -1894,7 +1894,7 @@
                 addressError.style.display = 'none';
             }
 
-            // KIỂM TRA NGÀY MƯỢN
+            // 4. KIỂM TRA NGÀY MƯỢN
             if (!rentalVal) {
                 rentalDateError.style.display = 'block';
                 if (!hasError) rentalDateInput.focus();
@@ -1903,14 +1903,14 @@
                 rentalDateError.style.display = 'none';
             }
 
-            // KIỂM TRA NGÀY TRẢ
+            // 5. KIỂM TRA NGÀY TRẢ
             if (!returnVal) {
                 returnDateError.innerText = 'Chọn ngày trả.';
                 returnDateError.style.display = 'block';
                 if (!hasError) returnDateInput.focus();
                 hasError = true;
             } else if (rentalVal && returnVal && returnVal < rentalVal) {
-                returnDateError.innerText = 'Trả phải >= mượn.';
+                returnDateError.innerText = 'Ngày trả phải >= ngày mượn.';
                 returnDateError.style.display = 'block';
                 if (!hasError) returnDateInput.focus();
                 hasError = true;
@@ -1936,18 +1936,20 @@
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${i.itemTotal}]`);
+                // Chuẩn cú pháp parse cho backend: [Mã: ID, Size: S, SL: 1, Thành tiền: 100.000đ]
+                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
             });
             
             const { extraFee, rentalDays } = calculateExtraFee(baseTotal);
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
-            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ (${timeString})*\n`;
+            // SOẠN TIN NHẮN GỬI TELEGRAM
+            let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ MỚI (${timeString})*\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
-            msg += `🏠 *Địa chỉ nhận hàng:* ${addressVal}\n`; // Thay đổi tại đây
+            msg += `🏠 *Địa chỉ nhận hàng:* ${addressVal}\n`;
             msg += `📅 *Ngày mượn:* ${formatDateVN(rentalVal)}\n`;
             msg += `📅 *Ngày trả:* ${formatDateVN(returnVal)} (Thuê ${rentalDays} ngày)\n\n`;
             
@@ -1956,39 +1958,40 @@
             });
             msg += `➖➖➖➖➖➖➖\n`;
             
-            msg += `📦 *Tổng số lượng SP:* ${totalItemsCount} bộ\n`;
-            
+            msg += `📦 *Tổng số lượng:* ${totalItemsCount} bộ\n`;
             if (extraFee > 0) {
                 msg += `⏱ *Số ngày thuê:* ${rentalDays} ngày (Phụ thu: +${formatMoney(extraFee)}đ)\n`;
             }
             msg += `💰 *Tổng tiền thuê:* ${formatMoney(baseTotal)}đ\n`;
-            msg += `📌 *Đặt cọc:* ${formatMoney(deposit)}đ\n`;
+            msg += `📌 *Đặt cọc (10%):* ${formatMoney(deposit)}đ\n`;
             if (extraFee > 0) {
-                msg += `➕ *Phụ thu phát sinh:* +${formatMoney(extraFee)}đ\n`;
+                msg += `➕ *Phụ thu:* +${formatMoney(extraFee)}đ\n`;
             }
             msg += `💵 *Số tiền còn lại:* ${formatMoney(receiveAmount)}đ\n\n`;
-            msg += `Shop kiểm tra lịch và liên hệ khách nhé!`;
+            msg += `👉 Vui lòng liên hệ xác nhận với khách sớm nhất!`;
 
             const btn = document.getElementById('checkoutBtn');
             btn.innerText = "Đang gửi đơn...";
             btn.disabled = true;
 
             try {
+                // CHUẨN BỊ PAYLOAD KHỚP CHÍNH XÁC VỚI doPost(e)
                 const formData = new URLSearchParams();
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
                 formData.append('name', nameVal);
                 formData.append('phone', phoneVal);
-                formData.append('address', addressVal); // Các biến sau tự động đẩy xuống dưới
+                formData.append('address', addressVal); // Chỉ ghi vào bảng cha don_hang
                 formData.append('rentalDate', formatDateVN(rentalVal));
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
-                formData.append('total', baseTotal);
-                formData.append('deposit', deposit);
-                formData.append('extraFee', extraFee);
-                formData.append('remaining', receiveAmount);
+                formData.append('total', `${formatMoney(baseTotal)}đ`);
+                formData.append('deposit', `${formatMoney(deposit)}đ`);
+                formData.append('extraFee', `${formatMoney(extraFee)}đ`);
+                formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
                 formData.append('totalQty', totalItemsCount); 
 
+                // 1. Gửi Telegram
                 const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1997,9 +2000,9 @@
                         text: msg,
                         parse_mode: 'Markdown'
                     })
-                }).catch(e => console.error("Lỗi Telegram:", e));
+                }).catch(e => console.error("Lỗi gửi Telegram:", e));
 
-                // Gửi dữ liệu tới link Web App ghi đơn hàng
+                // 2. Gửi Google Sheets Web App
                 const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -2008,7 +2011,7 @@
 
                 await Promise.all([sheetPromise, telegramPromise]);
 
-                showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ lại ngay.");
+                showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.");
                 cart = [];
                 nameInput.value = '';
                 phoneInput.value = '';
