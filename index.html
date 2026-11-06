@@ -1,4 +1,3 @@
-html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -72,6 +71,7 @@ html
             --text-main: #4a4a4a;
             --white: #ffffff;
             --footer-bg: #2c3e50;
+            --promo-red: #e74c3c;
         }
         
         html, body {
@@ -84,12 +84,29 @@ html
             overflow-x: hidden;
         }
 
+        /* BANNER KHUYẾN MÃI RA MẮT */
+        .promo-top-bar {
+            background: linear-gradient(90deg, #e74c3c, #ff4757, #e74c3c);
+            color: #ffffff;
+            text-align: center;
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.25);
+            animation: pulse-bar 2s infinite;
+        }
+        @keyframes pulse-bar {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.92; }
+        }
+
         /* BANNER */
         .hero-banner {
             display: block;
             width: 100%;
             max-width: 1200px;
-            margin: 20px auto 10px auto;
+            margin: 15px auto 10px auto;
             padding: 0 15px;
             text-decoration: none;
             background-color: transparent;
@@ -185,13 +202,39 @@ html
         .product-card {
             background: var(--white); border-radius: 12px; overflow: hidden;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05); display: flex; flex-direction: column; transition: 0.3s;
+            position: relative;
         }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(219, 112, 147, 0.2); }
+        
+        /* BADGE GIẢM GIÁ 15% */
+        .discount-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--promo-red);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(231, 76, 60, 0.4);
+            z-index: 5;
+            text-transform: uppercase;
+        }
+
         .product-card img.main-img { width: 100%; height: 260px; object-fit: contain; padding: 5px; border-bottom: 1px solid var(--light-pink); transition: 0.3s; background-color: #f9f9f9; cursor: pointer; }
         .product-info { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
         .product-code { font-size: 12px; color: #888; margin-bottom: 4px; font-weight: 600; }
         .product-title { font-size: 16px; font-weight: bold; margin: 0 0 8px; line-height: 1.4; }
-        .product-price { color: var(--primary); font-weight: bold; font-size: 15px; margin-bottom: 15px; }
+        
+        .price-box {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .product-price { color: var(--promo-red); font-weight: bold; font-size: 16px; }
+        .product-old-price { color: #999; font-size: 13px; text-decoration: line-through; }
 
         .btn-group { display: flex; gap: 8px; margin-top: auto; }
         .btn { flex: 1; padding: 8px 3px; border-radius: 8px; cursor: pointer; font-weight: bold; border: none; transition: 0.3s; font-size: 13px; }
@@ -444,7 +487,7 @@ html
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;}
         .form-group select, .form-group input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 15px; }
-        .price-display { font-size: 16px; color: var(--primary); font-weight: bold; margin-bottom: 15px; display: inline-block; background: var(--light-pink); padding: 8px 15px; border-radius: 20px; border: 1px dashed var(--primary); }
+        .price-display { font-size: 16px; color: var(--promo-red); font-weight: bold; margin-bottom: 15px; display: inline-block; background: var(--light-pink); padding: 8px 15px; border-radius: 20px; border: 1px dashed var(--promo-red); }
         
         .cart-float-btn { position: fixed; bottom: 30px; right: 30px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 30px; font-size: 15px; font-weight: bold; box-shadow: 0 4px 10px rgba(219, 112, 147, 0.4); cursor: pointer; border: none; display: flex; align-items: center; gap: 8px; z-index: 99; transition: 0.3s; }
         .cart-float-btn:hover { transform: scale(1.05); }
@@ -502,6 +545,7 @@ html
         }
 
         @media screen and (max-width: 768px) {
+            .promo-top-bar { font-size: 12px; padding: 6px 10px; }
             .hero-banner { padding: 0 10px; margin: 10px auto 5px auto; }
             .hero-banner picture { border-radius: 8px; }
 
@@ -509,7 +553,9 @@ html
             .product-card img.main-img { height: 180px; }
             .product-info { padding: 10px; }
             .product-title { font-size: 13px; margin-bottom: 5px; }
-            .product-price { font-size: 13px; margin-bottom: 10px; }
+            .product-price { font-size: 13px; }
+            .product-old-price { font-size: 11px; }
+            .price-box { margin-bottom: 10px; flex-direction: column; gap: 2px; }
             .btn-group { flex-direction: column; gap: 5px; }
             .btn { padding: 8px; font-size: 12px; }
 
@@ -548,13 +594,19 @@ html
             .product-grid { grid-template-columns: 1fr; gap: 15px; }
             .product-card img.main-img { height: 320px; }
             .product-title { font-size: 16px; margin-bottom: 8px; }
-            .product-price { font-size: 15px; margin-bottom: 12px; }
+            .product-price { font-size: 16px; }
+            .price-box { flex-direction: row; align-items: baseline; gap: 8px; margin-bottom: 12px; }
             .btn-group { flex-direction: row; gap: 10px; }
             .btn { padding: 12px; font-size: 14px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- THANH THÔNG BÁO QUẢNG CÁO GIẢM 15% MỪNG RA MẮT -->
+    <div class="promo-top-bar">
+        🎉 MỪNG RA MẮT WEBSITE: GIẢM NGAY 15% TOÀN BỘ ĐƠN HÀNG THUÊ ĐỒ! 🎁
+    </div>
 
     <!-- BANNER ĐẦU TRANG -->
     <a class="hero-banner" href="#menu-bar">
@@ -589,6 +641,7 @@ html
                 <div class="dropdown">
                     <button class="menu-btn">Chính sách ▾</button>
                     <div class="dropdown-content">
+                        <a onclick="showPolicyDetail('Chương trình khuyến mãi', '🎉 <b>GIẢM 15% TOÀN BỘ SẢN PHẨM:</b><br>- Áp dụng mừng đợt ra mắt website chính thức thuedo102.vn.<br>- Mức giá trên website đã tự động tính giảm 15% khi thanh toán.')">🎁 Ưu đãi ra mắt -15%</a>
                         <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                         <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
                         <a onclick="showPolicyDetail('Quy định hoàn trả đồ', '1. Đơn giá thuê áp dụng tối đa 3 ngày.<br>2. Từ ngày thứ 4 trở đi, phụ thu 20%/ngày dôi ra.<br>3. Trang phục và đạo cụ phải được giữ gìn sạch sẽ, không rách hay làm bẩn không tẩy được.')">🔄 Quy định hoàn trả đồ</a>
@@ -625,6 +678,7 @@ html
 
             <div class="footer-col">
                 <h3>Chính sách</h3>
+                <a onclick="showPolicyDetail('Chương trình khuyến mãi', '🎉 <b>GIẢM 15% TOÀN BỘ SẢN PHẨM:</b><br>- Áp dụng mừng đợt ra mắt website chính thức thuedo102.vn.<br>- Giá đã áp dụng ưu đãi trực tiếp trong giỏ hàng.')">🎁 Ưu đãi ra mắt -15%</a>
                 <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                 <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
                 <a onclick="showPolicyDetail('Quy định hoàn trả đồ', '1. Đơn giá thuê áp dụng tối đa 3 ngày.<br>2. Từ ngày thứ 4 trở đi, phụ thu 20%/ngày dôi ra.<br>3. Trang phục và đạo cụ phải được giữ gìn sạch sẽ, không rách hay làm bẩn không tẩy được.')">🔄 Quy định hoàn trả đồ</a>
@@ -644,7 +698,7 @@ html
             </div>
         </div>
 
-        <!-- BỘ ĐẾM LƯỢT TRUY CẬP HIỂN THỊ TRỰC TIẾP TẠI FOOTER -->
+        <!-- BỘ ĐẾM LƯỢT TRUY CẬP HIỂN THỊ TẠI FOOTER -->
         <div class="footer-bottom">
             <div>© 2026 Tiệm thuê đồ 102. Trịnh Văn Hướng: 0984 026 995.</div>
             <div id="visitorCounterBox" style="margin-top: 8px; font-size: 13px; color: #bdc3c7;">
@@ -743,8 +797,18 @@ html
             </div>
 
             <div class="cart-total-footer" id="cartTotalFooter" style="display: none;">
-                <div>
-                    <span>Tổng tiền thuê:</span>
+                <div style="color: #888; font-size: 13px;">
+                    <span>Tổng giá gốc:</span>
+                    <span id="originalTotalDisplay" style="text-decoration: line-through;">0đ</span>
+                </div>
+
+                <div style="color: var(--promo-red); font-size: 14px;">
+                    <span>Ưu đãi ra mắt (-15%):</span>
+                    <span id="discountAmountDisplay">-0đ</span>
+                </div>
+
+                <div style="font-size: 15px;">
+                    <span>Tổng tiền thuê (đã giảm):</span>
                     <span id="grandTotalDisplay">0đ</span>
                 </div>
 
@@ -788,9 +852,10 @@ html
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
+        const DISCOUNT_RATE = 0.15; // Giảm 15% mừng ra mắt website
         
         // 1. LINK GHI ĐƠN HÀNG (Google Apps Script Web App)
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzQkiKq8VEDXdMFCH5GJC_cAc0fqj7JETgB307rTUdqmlGL1kU8R98xJAVkvn5TtZeLBA/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfNgDg0qGX2nTYpUHzoxE_LUzPa1cnLvZegoUnrBIkMLQcYABP3Zy3Q_qRWPOnsk8uog/exec';
         
         // 2. LINK FILE DỮ LIỆU SẢN PHẨM
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -809,6 +874,7 @@ html
         let currentSlideImages = []; 
         let currentSlideIndex = 0; 
         let currentNumericPrice = 0; 
+        let currentDiscountedPrice = 0;
         let currentMaxQuantity = 999;
         
         let currentActiveCategory = 'Tất cả';
@@ -837,7 +903,7 @@ html
         let isSwiping = false;
         
         function formatMoney(num) { 
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
+            return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); 
         }
 
         function showCustomAlert(message) {
@@ -956,12 +1022,18 @@ html
                     const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx] : (parts[1] || '');
                     if (!prodName) return null;
 
+                    const rawPrice = priceIdx !== -1 && parts[priceIdx] ? parts[priceIdx] : '0đ';
+                    const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0;
+                    const discounted = Math.round(numPrice * (1 - DISCOUNT_RATE));
+
                     return {
                         id: idIdx !== -1 && parts[idIdx] ? parts[idIdx].trim() : (parts[0] ? parts[0].trim() : `prod-${idx}`),
                         name: prodName,
                         category: catIdx !== -1 && parts[catIdx] ? parts[catIdx] : 'Khác',
                         subcategory: subCatIdx !== -1 && parts[subCatIdx] ? parts[subCatIdx] : '',
-                        price: priceIdx !== -1 && parts[priceIdx] ? parts[priceIdx] : '0đ',
+                        price: rawPrice,
+                        numericPrice: numPrice,
+                        discountedPrice: discounted,
                         sizes: sizesIdx !== -1 && parts[sizesIdx] ? parts[sizesIdx] : 'FreeSize',
                         quantity: qtyIdx !== -1 && parts[qtyIdx] ? parts[qtyIdx].trim() : '',
                         image1: img1Idx !== -1 ? parts[img1Idx] : '',
@@ -1024,6 +1096,7 @@ html
                 <div class="dropdown">
                     <button class="menu-btn">Chính sách ▾</button>
                     <div class="dropdown-content">
+                        <a onclick="showPolicyDetail('Chương trình khuyến mãi', '🎉 <b>GIẢM 15% TOÀN BỘ SẢN PHẨM:</b><br>- Áp dụng mừng đợt ra mắt website chính thức thuedo102.vn.<br>- Mức giá trên website đã tự động tính giảm 15% khi thanh toán.')">🎁 Ưu đãi ra mắt -15%</a>
                         <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                         <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
                         <a onclick="showPolicyDetail('Quy định hoàn trả đồ', '1. Đơn giá thuê áp dụng tối đa 3 ngày.<br>2. Từ ngày thứ 4 trở đi, phụ thu 20%/ngày dôi ra.<br>3. Trang phục và đạo cụ phải được giữ gìn sạch sẽ, không rách hay làm bẩn không tẩy được.')">🔄 Quy định hoàn trả đồ</a>
@@ -1352,11 +1425,15 @@ html
                 
                 grid.innerHTML += `
                     <div class="product-card">
+                        <span class="discount-badge">Giảm 15%</span>
                         <img class="main-img" src="${mainImg}" loading="lazy" decoding="async" alt="${product.name}" onclick="openAlbum('${product.id}')" onerror="this.src='https://via.placeholder.com/400?text=Lỗi+Ảnh'">
                         <div class="product-info">
                             <span class="product-code">Mã: <b>${product.id}</b>${quantityText}</span>
                             <h3 class="product-title">${product.name}</h3>
-                            <p class="product-price">${product.price}</p>
+                            <div class="price-box">
+                                <span class="product-price">${formatMoney(product.discountedPrice)}đ</span>
+                                <span class="product-old-price">${formatMoney(product.numericPrice)}đ</span>
+                            </div>
                             <div class="btn-group">
                                 <button class="btn btn-outline" onclick="openAlbum('${product.id}')">Xem ảnh thật</button>
                                 <button class="btn btn-solid" onclick="openOrder('${product.id}')">Thêm vào <span style="font-size: 16px; filter: brightness(0) invert(1);">&#128722;</span></button>
@@ -1643,9 +1720,8 @@ html
             document.getElementById('orderProductId').value = p.id; 
             document.getElementById('orderProductName').innerText = p.name;
             
-            let rawPriceStr = String(p.price || '0');
-            let numericOnly = rawPriceStr.replace(/[^0-9]/g, '');
-            currentNumericPrice = parseInt(numericOnly, 10) || 0; 
+            currentNumericPrice = p.numericPrice;
+            currentDiscountedPrice = p.discountedPrice;
 
             let maxQtyParsed = parseInt(p.quantity, 10);
             currentMaxQuantity = (!isNaN(maxQtyParsed) && maxQtyParsed > 0) ? maxQtyParsed : 999;
@@ -1687,7 +1763,9 @@ html
                 qtyInput.value = 1;
             }
 
-            document.getElementById('orderPriceDisplay').innerText = `Tạm tính: ${formatMoney(currentNumericPrice * qty)}đ`; 
+            const total = currentDiscountedPrice * qty;
+            const originalTotal = currentNumericPrice * qty;
+            document.getElementById('orderPriceDisplay').innerHTML = `Tạm tính: <b>${formatMoney(total)}đ</b> <span style="font-size:12px; color:#888; text-decoration:line-through; font-weight:normal;">(${formatMoney(originalTotal)}đ)</span>`; 
         }
 
         function addToCart() {
@@ -1712,8 +1790,9 @@ html
             const item = { 
                 id: itemId, 
                 name: document.getElementById('orderProductName').innerText, 
-                numericPrice: currentNumericPrice, 
-                itemTotal: currentNumericPrice * qty, 
+                originalPrice: currentNumericPrice,
+                numericPrice: currentDiscountedPrice, 
+                itemTotal: currentDiscountedPrice * qty, 
                 size: itemSize, 
                 qty: qty 
             };
@@ -1779,7 +1858,9 @@ html
             if(rentalDateError) rentalDateError.style.display = 'none';
             if(returnDateError) returnDateError.style.display = 'none';
             
-            container.innerHTML = ''; let baseTotal = 0;
+            container.innerHTML = ''; 
+            let baseTotal = 0;
+            let originalTotal = 0;
             
             if (cart.length === 0) { 
                 container.innerHTML = '<div style="text-align: center; color: #888; padding: 20px;">Giỏ hàng của bạn đang trống</div>'; 
@@ -1793,6 +1874,7 @@ html
                 
                 cart.forEach((i, idx) => { 
                     baseTotal += i.itemTotal; 
+                    originalTotal += (i.originalPrice * i.qty);
                     container.innerHTML += `
                         <div class="cart-item">
                             <div class="cart-item-head">
@@ -1801,12 +1883,13 @@ html
                             </div>
                             <div class="cart-item-details">
                                 <span>Mã: ${i.id} | Size: ${i.size} | SL: ${i.qty}</span>
-                                <span style="color: var(--primary); font-weight: bold;">${formatMoney(i.itemTotal)}đ</span>
+                                <span style="color: var(--promo-red); font-weight: bold;">${formatMoney(i.itemTotal)}đ</span>
                             </div>
                         </div>
                     `; 
                 });
 
+                const discountAmount = originalTotal - baseTotal;
                 const { extraFee, rentalDays } = calculateExtraFee(baseTotal);
                 const deposit = calculateDeposit(baseTotal);
                 const grandTotal = baseTotal; 
@@ -1824,6 +1907,8 @@ html
                     receiveAmountLabel.innerText = "Số tiền còn lại (Tổng - Cọc):";
                 }
 
+                document.getElementById('originalTotalDisplay').innerText = `${formatMoney(originalTotal)}đ`;
+                document.getElementById('discountAmountDisplay').innerText = `-${formatMoney(discountAmount)}đ`;
                 document.getElementById('grandTotalDisplay').innerText = `${formatMoney(grandTotal)}đ`;
                 document.getElementById('depositDisplay').innerText = `${formatMoney(deposit)}đ`;
                 document.getElementById('receiveAmountDisplay').innerText = `${formatMoney(receiveAmount)}đ`;
@@ -1937,21 +2022,25 @@ html
             const timeString = `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
 
             let baseTotal = 0;
+            let originalTotal = 0;
             let itemsDetailArr = [];
             let productCodesList = cart.map(i => `${String(i.id).trim()} (${i.size})`).join(', ');
             let totalItemsCount = cart.reduce((sum, i) => sum + i.qty, 0);
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
+                originalTotal += (i.originalPrice * i.qty);
+                itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${i.itemTotal}]`);
             });
             
+            const discountAmount = originalTotal - baseTotal;
             const { extraFee, rentalDays } = calculateExtraFee(baseTotal);
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
             // SOẠN TIN NHẮN TELEGRAM
             let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ MỚI (${timeString})*\n`;
+            msg += `🎁 *Khuyến mãi:* Đã áp dụng giảm 15% ra mắt\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
@@ -1965,23 +2054,22 @@ html
             msg += `➖➖➖➖➖➖➖\n`;
             
             msg += `📦 *Tổng số lượng:* ${totalItemsCount} bộ\n`;
+            msg += `💰 *Tổng gốc:* ~${formatMoney(originalTotal)}đ~\n`;
+            msg += `🎉 *Giảm giá 15%:* -${formatMoney(discountAmount)}đ\n`;
+            msg += `💵 *Tổng sau giảm:* ${formatMoney(baseTotal)}đ\n`;
+            msg += `📌 *Đặt cọc (10%):* ${formatMoney(deposit)}đ\n`;
             if (extraFee > 0) {
                 msg += `⏱ *Số ngày thuê:* ${rentalDays} ngày (Phụ thu: +${formatMoney(extraFee)}đ)\n`;
             }
-            msg += `💰 *Tổng tiền thuê:* ${formatMoney(baseTotal)}đ\n`;
-            msg += `📌 *Đặt cọc (10%):* ${formatMoney(deposit)}đ\n`;
-            if (extraFee > 0) {
-                msg += `➕ *Phụ thu:* +${formatMoney(extraFee)}đ\n`;
-            }
-            msg += `💵 *Số tiền còn lại:* ${formatMoney(receiveAmount)}đ\n\n`;
-            msg += `👉 Vui lòng liên hệ xác nhận với khách sớm nhất!`;
+            msg += `👉 *Số tiền còn lại:* ${formatMoney(receiveAmount)}đ\n\n`;
+            msg += `Shop kiểm tra và liên hệ khách chốt đơn nhé!`;
 
             const btn = document.getElementById('checkoutBtn');
             btn.innerText = "Đang gửi đơn...";
             btn.disabled = true;
 
             try {
-                // CHUẨN BỊ THAM SỐ GỬI SANG doPost(e)
+                // CHUẨN BỊ THAM SỐ GỬI SANG doPost(e) (Gửi dạng số Number)
                 const formData = new URLSearchParams();
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
@@ -1991,10 +2079,10 @@ html
                 formData.append('rentalDate', formatDateVN(rentalVal));
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
-                formData.append('total', `${formatMoney(baseTotal)}đ`);
-                formData.append('deposit', `${formatMoney(deposit)}đ`);
-                formData.append('extraFee', `${formatMoney(extraFee)}đ`);
-                formData.append('remaining', `${formatMoney(receiveAmount)}đ`);
+                formData.append('total', baseTotal);
+                formData.append('deposit', deposit);
+                formData.append('extraFee', extraFee);
+                formData.append('remaining', receiveAmount);
                 formData.append('totalQty', totalItemsCount); 
 
                 // 1. Gửi Telegram
