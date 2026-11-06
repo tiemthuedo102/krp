@@ -1,3 +1,4 @@
+html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -643,7 +644,13 @@
             </div>
         </div>
 
-        <div class="footer-bottom">© 2026 Tiệm thuê đồ 102. Trịnh Văn Hướng: 0984 026 995.</div>
+        <!-- BỘ ĐẾM LƯỢT TRUY CẬP HIỂN THỊ TRỰC TIẾP TẠI FOOTER -->
+        <div class="footer-bottom">
+            <div>© 2026 Tiệm thuê đồ 102. Trịnh Văn Hướng: 0984 026 995.</div>
+            <div id="visitorCounterBox" style="margin-top: 8px; font-size: 13px; color: #bdc3c7;">
+                👁️ Lượt truy cập: <span id="visitCount" style="color: var(--accent); font-weight: bold;">...</span>
+            </div>
+        </div>
     </footer>
 
     <!-- MODAL XEM ẢNH FULL MÀN HÌNH + ZOOM -->
@@ -783,7 +790,7 @@
         // ================= CẤU HÌNH HỆ THỐNG =================
         
         // 1. LINK GHI ĐƠN HÀNG (Google Apps Script Web App)
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxqbLywwSrWLlUZIIAvZ3_-RMR47V4T5NfeTg1jU-4m2zABAJfZHPyWOSJCMIlShbYpfg/exec';
+        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwfNgDg0qGX2nTYpUHzoxE_LUzPa1cnLvZegoUnrBIkMLQcYABP3Zy3Q_qRWPOnsk8uog/exec';
         
         // 2. LINK FILE DỮ LIỆU SẢN PHẨM
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
@@ -1936,7 +1943,6 @@
 
             cart.forEach((i) => { 
                 baseTotal += i.itemTotal;
-                // Chuẩn cú pháp parse cho backend: [Mã: ID, Size: S, SL: 1, Thành tiền: 100.000đ]
                 itemsDetailArr.push(`${i.name} [Mã: ${i.id}, Size: ${i.size}, SL: ${i.qty}, Thành tiền: ${formatMoney(i.itemTotal)}đ]`);
             });
             
@@ -1944,7 +1950,7 @@
             const deposit = calculateDeposit(baseTotal);
             const receiveAmount = baseTotal - deposit + extraFee;
 
-            // SOẠN TIN NHẮN GỬI TELEGRAM
+            // SOẠN TIN NHẮN TELEGRAM
             let msg = `🔔 *ĐƠN ĐẶT THUÊ ĐỒ MỚI (${timeString})*\n`;
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal}\n`;
@@ -1975,13 +1981,13 @@
             btn.disabled = true;
 
             try {
-                // CHUẨN BỊ PAYLOAD KHỚP CHÍNH XÁC VỚI doPost(e)
+                // CHUẨN BỊ THAM SỐ GỬI SANG doPost(e)
                 const formData = new URLSearchParams();
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
                 formData.append('name', nameVal);
                 formData.append('phone', phoneVal);
-                formData.append('address', addressVal); // Chỉ ghi vào bảng cha don_hang
+                formData.append('address', addressVal);
                 formData.append('rentalDate', formatDateVN(rentalVal));
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
@@ -2029,6 +2035,21 @@
             }
         }
 
+        // HÀM THEO DÕI VÀ TĂNG LƯỢT TRUY CẬP TỰ ĐỘNG
+        async function trackVisitorCount() {
+            try {
+                const response = await fetch('https://api.counterapi.dev/v1/thuedo102_vn/visitors/up');
+                const data = await response.json();
+                
+                if (data && typeof data.count !== 'undefined') {
+                    document.getElementById('visitCount').innerText = Number(data.count).toLocaleString('vi-VN');
+                }
+            } catch (err) {
+                const box = document.getElementById('visitorCounterBox');
+                if (box) box.style.display = 'none';
+            }
+        }
+
         function closeModal(id) { 
             document.getElementById(id).style.display = 'none'; 
             if (id === 'albumModal') {
@@ -2043,6 +2064,7 @@
         window.onload = () => {
             window.scrollTo(0, 0);
             fetchSheetData();
+            trackVisitorCount();
         };
     </script>
 </body>
