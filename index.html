@@ -715,9 +715,9 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="customerAddress">Địa chỉ nhận đồ (<span style="color: red;">*</span>):</label>
-                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhập địa chỉ nhận đồ/giao đồ của bạn" type="text" />
-                    <small id="addressError" style="color: #e74c3c; display: none; margin-top: 4px; font-size: 12px;">Vui lòng nhập địa chỉ nhận đồ.</small>
+                    <label for="customerAddress">Địa chỉ nhận hàng (<span style="color: red;">*</span>):</label>
+                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhập địa chỉ nhận hàng của bạn" type="text" />
+                    <small id="addressError" style="color: #e74c3c; display: none; margin-top: 4px; font-size: 12px;">Vui lòng nhập địa chỉ nhận hàng.</small>
                 </div>
 
                 <div class="form-row-dates">
@@ -782,19 +782,16 @@
 
         // ================= CẤU HÌNH HỆ THỐNG =================
         
-        // 1. LINK GHI ĐƠN HÀNG (Thay link mới tạo vào đây để sửa lỗi trùng mã HĐ)
-        // Đây là Web App của file chứa sheet "don_hang" và "chi_tiet_DH"
+        // 1. LINK GHI ĐƠN HÀNG
         const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwl66h1AEpaDCawgyW51rioK986_odu0_VKxo3EtO_sXQ16g7uTLke9RRnZS57Bs-vgow/exec';
         
-        // 2. LINK FILE DỮ LIỆU (Giữ nguyên)
-        // Đây là link chia sẻ trực tiếp của file chứa sheet "data" (kho hàng) để web tự lấy ảnh/giá
+        // 2. LINK FILE DỮ LIỆU
         const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1XpWA7sfpO02mzGvICo7JBR52jPxFFtYeennUcYD3PTU/edit?usp=sharing';
 
-        // 3. LINK TÍCH HỢP GEMINI AI (Giữ nguyên)
-        // Đây là Web App của file Apps Script nhận diện hình ảnh
+        // 3. LINK TÍCH HỢP GEMINI AI
         const GOOGLE_SCRIPT_AI_URL = 'https://script.google.com/macros/s/AKfycbwcSYXeh8HVfnGyI6JxKH2kNSO4IFnEYFBd54vAArU9SvxZw38P87We4awZJIjxJrH-Hg/exec';
 
-        // CẤU HÌNH TELEGRAM (Giữ nguyên)
+        // CẤU HÌNH TELEGRAM
         const TELEGRAM_BOT_TOKEN = '8790638337:AAEgRof-186F7hqK0lw_R8n5xsHU8OVSmhM'; 
         const TELEGRAM_CHAT_ID = '-1004400070779';
         
@@ -1950,7 +1947,7 @@
             msg += `🏷 *Mã SP đơn này:* \`${productCodesList}\`\n\n`;
             msg += `👤 *Họ tên KH:* ${nameVal}\n`;
             msg += `📞 *ĐT:* \`${phoneVal}\`\n`;
-            msg += `🏠 *Địa chỉ:* ${addressVal}\n`;
+            msg += `🏠 *Địa chỉ nhận hàng:* ${addressVal}\n`; // Thay đổi tại đây
             msg += `📅 *Ngày mượn:* ${formatDateVN(rentalVal)}\n`;
             msg += `📅 *Ngày trả:* ${formatDateVN(returnVal)} (Thuê ${rentalDays} ngày)\n\n`;
             
@@ -1980,9 +1977,9 @@
                 const formData = new URLSearchParams();
                 formData.append('productCode', productCodesList);
                 formData.append('timeString', timeString);
-                formData.append('name', nameVal); // Gửi tên bắt buộc
+                formData.append('name', nameVal);
                 formData.append('phone', phoneVal);
-                formData.append('address', addressVal); // Gửi địa chỉ thêm vào Form data
+                formData.append('address', addressVal); // Các biến sau tự động đẩy xuống dưới
                 formData.append('rentalDate', formatDateVN(rentalVal));
                 formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
                 formData.append('itemsDetail', itemsDetailArr.join(';\n'));
@@ -2002,7 +1999,7 @@
                     })
                 }).catch(e => console.error("Lỗi Telegram:", e));
 
-                // Gửi dữ liệu tới link Web App ghi đơn hàng (GOOGLE_APPS_SCRIPT_URL)
+                // Gửi dữ liệu tới link Web App ghi đơn hàng
                 const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -2015,7 +2012,7 @@
                 cart = [];
                 nameInput.value = '';
                 phoneInput.value = '';
-                addressInput.value = ''; // Reset ô địa chỉ
+                addressInput.value = ''; 
                 rentalDateInput.value = '';
                 returnDateInput.value = '';
                 document.getElementById('cartCountBadge').innerText = 0;
