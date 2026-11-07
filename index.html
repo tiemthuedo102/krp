@@ -404,8 +404,8 @@
         .slide-img { 
             max-width: 95vw; 
             max-height: 85vh; 
-            width: auto;
-            height: auto;
+            width: auto; 
+            height: auto; 
             object-fit: contain; 
             display: none; 
             user-select: none; 
@@ -776,9 +776,8 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="customerAddress">Địa chỉ nhận hàng (<span style="color: red;">*</span>):</label>
-                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhập địa chỉ giao/nhận hàng cụ thể" type="text" />
-                    <small id="addressError" style="color: #e74c3c; display: none; margin-top: 4px; font-size: 12px;">Vui lòng nhập địa chỉ nhận hàng.</small>
+                    <label for="customerAddress">Địa chỉ nhận hàng (nhận tại shop thì để trống):</label>
+                    <input autocomplete="street-address" id="customerAddress" placeholder="Nhận tại shop thì để trống" type="text" />
                 </div>
 
                 <div class="form-row-dates">
@@ -1800,7 +1799,7 @@
             if (ex > -1) { 
                 cart[ex].qty += item.qty; 
                 cart[ex].itemTotal = cart[ex].qty * cart[ex].numericPrice; 
-            } else {
+            } else { 
                 cart.push(item);
             }
             
@@ -1843,7 +1842,6 @@
             
             const nameError = document.getElementById('nameError');
             const phoneError = document.getElementById('phoneError');
-            const addressError = document.getElementById('addressError');
             const rentalDateError = document.getElementById('rentalDateError');
             const returnDateError = document.getElementById('returnDateError');
             
@@ -1854,7 +1852,6 @@
             
             if(nameError) nameError.style.display = 'none';
             if(phoneError) phoneError.style.display = 'none';
-            if(addressError) addressError.style.display = 'none';
             if(rentalDateError) rentalDateError.style.display = 'none';
             if(returnDateError) returnDateError.style.display = 'none';
             
@@ -1947,13 +1944,12 @@
             
             const nameError = document.getElementById('nameError');
             const phoneError = document.getElementById('phoneError');
-            const addressError = document.getElementById('addressError');
             const rentalDateError = document.getElementById('rentalDateError');
             const returnDateError = document.getElementById('returnDateError');
             
             const nameVal = nameInput.value.trim();
             const phoneVal = phoneInput.value.trim();
-            const addressVal = addressInput.value.trim();
+            const addressVal = addressInput.value.trim() || 'Nhận tại shop';
             const rentalVal = rentalDateInput.value;
             const returnVal = returnDateInput.value;
 
@@ -1977,16 +1973,7 @@
                 phoneError.style.display = 'none';
             }
 
-            // 3. KIỂM TRA ĐỊA CHỈ NHẬN HÀNG
-            if (!addressVal) {
-                addressError.style.display = 'block';
-                if (!hasError) addressInput.focus();
-                hasError = true;
-            } else {
-                addressError.style.display = 'none';
-            }
-
-            // 4. KIỂM TRA NGÀY MƯỢN
+            // 3. KIỂM TRA NGÀY MƯỢN
             if (!rentalVal) {
                 rentalDateError.style.display = 'block';
                 if (!hasError) rentalDateInput.focus();
@@ -1995,7 +1982,7 @@
                 rentalDateError.style.display = 'none';
             }
 
-            // 5. KIỂM TRA NGÀY TRẢ
+            // 4. KIỂM TRA NGÀY TRẢ
             if (!returnVal) {
                 returnDateError.innerText = 'Chọn ngày trả.';
                 returnDateError.style.display = 'block';
