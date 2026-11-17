@@ -1311,65 +1311,48 @@
         }
 
        function calculateSimilarityScore(product, rawKeyword) {
-            const normKeyword = removeVN(rawKeyword);
+            const normKeyword = removeVN(rawKeyword).trim();
+            if (!normKeyword) return 0;
+            
             const normId = removeVN(product.id);
             const normName = removeVN(product.name);
             const normCat = removeVN(`${product.category} ${product.subcategory}`);
 
-            // --- CẢI TIẾN: Tìm kiếm tương đối (Substring / Prefix) ---
-            // Ưu tiên 1: Mã SP bắt đầu bằng từ khóa (Ví dụ: nhập "a" -> ưu tiên hiển thị "a32" lên đầu)
-            if (normId.startsWith(normKeyword) || normId.replace('.png', '').startsWith(normKeyword)) {
-                return 100;
-            }
-            
-            // Ưu tiên 2: Mã SP chứa từ khóa ở giữa (Ví dụ: nhập "32" -> vẫn ra "a32")
-            if (normId.includes(normKeyword) || normId.replace('.png', '').includes(normKeyword)) {
-                return 95;
-            }
+            // 1. CHÍNH XÁC TUYỆT ĐỐI (100 điểm)
+            if (normId === normKeyword || normId.replace('.png', '') === normKeyword) return 100;
+            if (normName === normKeyword) return 100;
 
-            // Ưu tiên 3: Tên SP chứa từ khóa (Bỏ giới hạn bắt buộc từ khóa phải > 3 ký tự)
-            if (normName.includes(normKeyword)) {
-                return 90;
-            }
+            // 2. KHỚP CHUỖI LIÊN TIẾP 
+            // Vd gõ "A3" -> Mã ID bắt đầu bằng "A3" được 95 điểm, mã chứa "A3" ở giữa được 90 điểm
+            if (normId.startsWith(normKeyword) || normId.replace('.png', '').startsWith(normKeyword)) return 95;
+            if (normId.includes(normKeyword) || normId.replace('.png', '').includes(normKeyword)) return 90;
+            // Tên chứa nguyên cụm từ vừa gõ (Vd: "áo dài")
+            if (normName.includes(normKeyword)) return 88;
 
-            // --- Tìm kiếm mờ theo từng từ (Word tokens) ---
-            const stopWords = ['va', 'co', 'bo', 'trang', 'phuc', 'do', 'cho', 'thue', 'mau', 'cua', 'voi', 'hinh', 'anh', 'nhung', 'cac', 'chiec', 'mot'];
-            
-            // Cho phép lọc cả những từ khóa ngắn (length >= 1) thay vì >= 2 như trước đây
-            const tokens = normKeyword.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
-                                      .split(/\s+/)
-                                      .filter(w => w.length >= 1 && !stopWords.includes(w));
-
+            // 3. KHỚP THEO TỪ KHÓA (Càng gõ nhiều chữ, độ khó càng tăng)
+            const tokens = normKeyword.split(/\s+/).filter(w => w.length > 0);
             if (tokens.length === 0) return 0;
 
-            let matchedWeight = 0;
-            let totalWeight = 0;
-            let exactIdMatch = false;
-
+            let matchedCount = 0;
             tokens.forEach(token => {
-                if (normId === token || normId.includes(token) || normId.replace('.png', '').includes(token.replace('.png', ''))) {
-                    exactIdMatch = true;
-                } else {
-                    totalWeight += 1;
-                    
-                    const regexExact = new RegExp(`\\b${token}\\b`);
-                    
-                    if (regexExact.test(normName)) {
-                        matchedWeight += 1.0; 
-                    } else if (normName.includes(token)) {
-                        matchedWeight += 0.5; 
-                    } else if (regexExact.test(normCat)) {
-                        matchedWeight += 0.8; 
-                    } else if (normCat.includes(token)) {
-                        matchedWeight += 0.4;
-                    }
+                // Chỉ cần 1 trong các trường có chứa từ khóa này
+                if (normId.includes(token) || normName.includes(token) || normCat.includes(token)) {
+                    matchedCount++;
                 }
             });
 
-            if (exactIdMatch) return 100;
-            if (totalWeight === 0) return 0;
+            // Tính tỉ lệ khớp: Số từ tìm thấy / Tổng số từ đã gõ
+            const matchRatio = matchedCount / tokens.length;
 
-            return (matchedWeight / totalWeight) * 100;
+            if (matchRatio === 1) {
+                // Khớp ĐỦ TẤT CẢ các từ khóa vừa gõ (nhưng nằm rải rác) -> 85 điểm (Đủ chuẩn lọt TOP)
+                // Vd: gõ "váy hồng" -> SP tên "Váy múa xòe màu hồng" sẽ đạt 85 điểm.
+                return 85; 
+            }
+
+            // Nếu gõ 3 từ mà chỉ có 1-2 từ khớp (matchRatio < 1) -> Đánh tụt điểm rất mạnh (< 75 điểm)
+            // Lập tức loại bỏ hoặc đẩy sản phẩm không chứa đủ từ khóa xuống chót.
+            return matchRatio * 75; 
         }
 
         function renderFilteredProducts() {
