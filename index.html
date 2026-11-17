@@ -1114,6 +1114,9 @@
         }
 
         function filterProducts(category, subcategory = null) {
+            // CẢI TIẾN: Tự động xóa rỗng ô tìm kiếm khi bấm chọn menu
+            document.getElementById('searchInput').value = '';
+
             isAISearchMode = false;
             currentActiveCategory = category;
             currentActiveSubcategory = subcategory;
@@ -1123,6 +1126,7 @@
             if (btnAll) btnAll.classList.remove('active');
             if(category === 'Tất cả' && btnAll) btnAll.classList.add('active');
 
+            // Ẩn menu trên điện thoại sau khi chọn
             if (window.innerWidth <= 768) {
                 if (subcategory || category === 'Tất cả') {
                     document.getElementById('menuItems').classList.remove('show');
