@@ -1310,23 +1310,35 @@
             }
         }
 
-        function calculateSimilarityScore(product, rawKeyword) {
+       function calculateSimilarityScore(product, rawKeyword) {
             const normKeyword = removeVN(rawKeyword);
             const normId = removeVN(product.id);
             const normName = removeVN(product.name);
             const normCat = removeVN(`${product.category} ${product.subcategory}`);
 
-            if (normId === normKeyword || normId.replace('.png', '') === normKeyword) {
+            // --- CẢI TIẾN: Tìm kiếm tương đối (Substring / Prefix) ---
+            // Ưu tiên 1: Mã SP bắt đầu bằng từ khóa (Ví dụ: nhập "a" -> ưu tiên hiển thị "a32" lên đầu)
+            if (normId.startsWith(normKeyword) || normId.replace('.png', '').startsWith(normKeyword)) {
                 return 100;
             }
-            if (normName.includes(normKeyword) && normKeyword.length > 3) {
-                return 100;
+            
+            // Ưu tiên 2: Mã SP chứa từ khóa ở giữa (Ví dụ: nhập "32" -> vẫn ra "a32")
+            if (normId.includes(normKeyword) || normId.replace('.png', '').includes(normKeyword)) {
+                return 95;
             }
 
+            // Ưu tiên 3: Tên SP chứa từ khóa (Bỏ giới hạn bắt buộc từ khóa phải > 3 ký tự)
+            if (normName.includes(normKeyword)) {
+                return 90;
+            }
+
+            // --- Tìm kiếm mờ theo từng từ (Word tokens) ---
             const stopWords = ['va', 'co', 'bo', 'trang', 'phuc', 'do', 'cho', 'thue', 'mau', 'cua', 'voi', 'hinh', 'anh', 'nhung', 'cac', 'chiec', 'mot'];
+            
+            // Cho phép lọc cả những từ khóa ngắn (length >= 1) thay vì >= 2 như trước đây
             const tokens = normKeyword.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, " ")
                                       .split(/\s+/)
-                                      .filter(w => w.length >= 2 && !stopWords.includes(w));
+                                      .filter(w => w.length >= 1 && !stopWords.includes(w));
 
             if (tokens.length === 0) return 0;
 
@@ -1335,7 +1347,7 @@
             let exactIdMatch = false;
 
             tokens.forEach(token => {
-                if (normId === token || normId.replace('.png', '') === token.replace('.png', '')) {
+                if (normId === token || normId.includes(token) || normId.replace('.png', '').includes(token.replace('.png', ''))) {
                     exactIdMatch = true;
                 } else {
                     totalWeight += 1;
