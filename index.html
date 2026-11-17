@@ -1193,33 +1193,53 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        canvas.width = 50;
-                        canvas.height = 50;
+                        canvas.width = 100; // Tăng độ phân giải quét lên 100x100
+                        canvas.height = 100;
                         const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, 50, 50);
-                        const data = ctx.getImageData(10, 10, 30, 30).data;
-                        let r = 0, g = 0, b = 0, count = 0;
-                        for (let i = 0; i < data.length; i += 4) {
-                            if (data[i+3] < 128 || (data[i] > 240 && data[i+1] > 240 && data[i+2] > 240)) continue;
-                            r += data[i]; g += data[i+1]; b += data[i+2];
-                            count++;
-                        }
-                        if (count === 0) return resolve("trang phục"); 
-                        r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+                        ctx.drawImage(img, 0, 0, 100, 100);
                         
-                        let colorWord = "";
-                        if (r > 150 && g < 100 && b < 100) colorWord = "đỏ";
-                        else if (g > r && g > b) colorWord = "xanh lá";
-                        else if (b > r && b > g) colorWord = "xanh dương";
-                        else if (r > 180 && g > 100 && b > 140) colorWord = "hồng";
-                        else if (r > 180 && g > 160 && b < 100) colorWord = "vàng";
-                        else if (r < 70 && g < 70 && b < 70) colorWord = "đen";
-                        else if (r > 200 && g > 200 && b > 200) colorWord = "trắng";
-                        else colorWord = "nhiều màu";
+                        // Quét lấy vùng trung tâm 50x50 để tránh viền trắng ngoài cùng
+                        const data = ctx.getImageData(25, 25, 50, 50).data;
+                        
+                        // Khởi tạo các rổ đếm màu độc lập
+                        let colorCounts = {
+                            "đỏ": 0, "xanh lá": 0, "xanh dương": 0, 
+                            "hồng": 0, "vàng": 0, "đen": 0, "trắng": 0
+                        };
 
-                        resolve(colorWord); 
+                        for (let i = 0; i < data.length; i += 4) {
+                            let r = data[i], g = data[i+1], b = data[i+2], a = data[i+3];
+                            
+                            // Bỏ qua các điểm ảnh trong suốt hoặc nền màu trắng/sáng
+                            if (a < 128 || (r > 230 && g > 230 && b > 230)) continue;
+
+                            // Phân loại từng điểm ảnh vào rổ màu tương ứng
+                            if (r < 70 && g < 70 && b < 70) colorCounts["đen"]++;
+                            else if (r > 150 && g > 120 && b < 100) colorCounts["vàng"]++; // Họa tiết vàng/gold
+                            else if (r > 150 && g < 100 && b < 100) colorCounts["đỏ"]++;
+                            else if (g > r + 20 && g > b + 20) colorCounts["xanh lá"]++;
+                            else if (b > r + 20 && b > g + 20) colorCounts["xanh dương"]++;
+                            else if (r > 180 && g > 100 && b > 140) colorCounts["hồng"]++;
+                        }
+
+                        // Tìm ra màu xuất hiện áp đảo nhất trên trang phục
+                        let dominantColor = "";
+                        let maxCount = 0;
+                        for (let color in colorCounts) {
+                            if (colorCounts[color] > maxCount) {
+                                maxCount = colorCounts[color];
+                                dominantColor = color;
+                            }
+                        }
+
+                        // Nếu diện tích màu quét được quá nhỏ, ưu tiên tìm kiểu dáng chung chung
+                        if (maxCount < 10) {
+                            resolve("dân tộc"); 
+                        } else {
+                            resolve(dominantColor);
+                        }
                     };
-                    img.onerror = () => resolve("trang phục");
+                    img.onerror = () => resolve("dân tộc");
                 };
             });
         }
