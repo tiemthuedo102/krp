@@ -1290,7 +1290,8 @@
 
         async function analyzeImageWithGemini(base64Data, mimeType) {
             try {
-                const aiPrompt = "Phân tích trang phục trong ảnh. Trả về đúng 1 dòng chứa các từ khóa ngắn gọn (không có dấu phẩy), cách nhau bằng khoảng trắng, tập trung vào 3 yếu tố chính: 1. Độ tuổi/Đối tượng (người lớn, trẻ em, bé gái, bé trai), 2. Hình dạng/Kiểu dáng (áo dài, váy múa, tứ thân, cổ trang, bà ba, đầm dạ hội, áo thun, múa ô...), 3. Màu sắc chủ đạo (đỏ, xanh, vàng, trắng...). Ví dụ kết quả: trẻ em váy múa xòe hồng trắng";
+                // CẢI TIẾN PROMPT AI: Bắt AI đọc mã SP trên ảnh trước, sau đó mới xét kiểu dáng
+                const aiPrompt = "Bạn là AI chuyên gia trang phục. Hãy nhìn kỹ bức ảnh:\n1. Nếu trên ảnh có đoạn text ghi Mã sản phẩm (Ví dụ: Mã: A1, B2.1, C3...), hãy trả về CHÍNH XÁC MÃ ĐÓ (Ví dụ: A1).\n2. Nếu không có mã, hãy trả về 1 cụm từ (2-4 từ) mô tả KIỂU DÁNG CHÍNH (VD: áo dài, váy múa xòe, đồ bà ba, trang phục dân tộc, đồ tứ thân, cổ trang...) và 1 MÀU SẮC CHỦ ĐẠO.\nChỉ trả về 1 dòng text kết quả ngắn gọn nhất, không giải thích thêm.";
 
                 const response = await fetch(GOOGLE_SCRIPT_AI_URL, {
                     method: 'POST',
@@ -1322,41 +1323,52 @@
             const normName = removeVN(product.name);
             const normCat = removeVN(`${product.category} ${product.subcategory}`);
 
-            // 1. CHÍNH XÁC TUYỆT ĐỐI (100 điểm)
+            // 1. CHÍNH XÁC TUYỆT ĐỐI (100 điểm) - Dành cho AI đọc được Mã
             if (normId === normKeyword || normId.replace('.png', '') === normKeyword) return 100;
             if (normName === normKeyword) return 100;
 
-            // 2. KHỚP CHUỖI LIÊN TIẾP 
-            // Vd gõ "A3" -> Mã ID bắt đầu bằng "A3" được 95 điểm, mã chứa "A3" ở giữa được 90 điểm
+            // 2. KHỚP MÃ HOẶC CỤM TỪ LIÊN TIẾP (88 - 95 điểm)
             if (normId.startsWith(normKeyword) || normId.replace('.png', '').startsWith(normKeyword)) return 95;
             if (normId.includes(normKeyword) || normId.replace('.png', '').includes(normKeyword)) return 90;
-            // Tên chứa nguyên cụm từ vừa gõ (Vd: "áo dài")
             if (normName.includes(normKeyword)) return 88;
 
-            // 3. KHỚP THEO TỪ KHÓA (Càng gõ nhiều chữ, độ khó càng tăng)
+            // 3. TÌM KIẾM MỜ (Tách từ)
             const tokens = normKeyword.split(/\s+/).filter(w => w.length > 0);
             if (tokens.length === 0) return 0;
 
             let matchedCount = 0;
+            let shapeMatched = false;
+            // Bộ từ khóa ưu tiên nhận diện kiểu dáng
+            const shapeKeywords = ['vay', 'mua', 'ao', 'dai', 'ba', 'tu', 'than', 'dan', 'toc', 'co', 'trang', 'dam', 'vest', 'yem', 'hmong', 'thai'];
+
             tokens.forEach(token => {
-                // Chỉ cần 1 trong các trường có chứa từ khóa này
                 if (normId.includes(token) || normName.includes(token) || normCat.includes(token)) {
                     matchedCount++;
+                    // Ghi nhận nếu khớp được từ khóa về hình dạng
+                    if (shapeKeywords.includes(token)) {
+                        shapeMatched = true;
+                    }
                 }
             });
 
-            // Tính tỉ lệ khớp: Số từ tìm thấy / Tổng số từ đã gõ
             const matchRatio = matchedCount / tokens.length;
 
-            if (matchRatio === 1) {
-                // Khớp ĐỦ TẤT CẢ các từ khóa vừa gõ (nhưng nằm rải rác) -> 85 điểm (Đủ chuẩn lọt TOP)
-                // Vd: gõ "váy hồng" -> SP tên "Váy múa xòe màu hồng" sẽ đạt 85 điểm.
-                return 85; 
+            if (isAISearchMode) {
+                // --- KHI TÌM BẰNG ẢNH AI ---
+                if (matchRatio === 1) return 85; 
+                
+                // ƯU TIÊN HÌNH DẠNG: Nếu AI trả về kiểu dáng (Vd: Váy múa, Áo dài) mà khớp, 
+                // thì dù sai màu (matchRatio < 1), vẫn vớt lên mức 70-80 điểm để hiển thị đầu danh sách.
+                if (shapeMatched && matchedCount >= 2) return 80;
+                if (shapeMatched && matchedCount === 1) return 70;
+                
+                // Không khớp hình dạng -> đánh tụt điểm để lọc bỏ rác
+                return matchRatio * 40; 
+            } else {
+                // --- KHI KHÁCH GÕ TEXT BẰNG TAY ---
+                if (matchRatio === 1) return 85; 
+                return matchRatio * 75; // Vẫn giữ khắt khe như yêu cầu trước của anh
             }
-
-            // Nếu gõ 3 từ mà chỉ có 1-2 từ khớp (matchRatio < 1) -> Đánh tụt điểm rất mạnh (< 75 điểm)
-            // Lập tức loại bỏ hoặc đẩy sản phẩm không chứa đủ từ khóa xuống chót.
-            return matchRatio * 75; 
         }
 
         function renderFilteredProducts() {
