@@ -81,7 +81,7 @@
         .menu-btn:hover, .dropdown:hover .menu-btn, .menu-btn.active { background: var(--primary); color: var(--white); cursor: pointer; }
         .dropdown-content { display: none; position: absolute; background-color: var(--white); min-width: 240px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); z-index: 101; border-radius: 8px; overflow: hidden; top: 100%; left: 0; border: 1px solid var(--accent); }
         .dropdown-content a { color: var(--text-main); padding: 12px 16px; text-decoration: none; display: block; font-size: 14px; border-bottom: 1px solid var(--light-pink); cursor: pointer; transition: 0.2s; }
-        .dropdown-content a:hover { background-color: var(--light-pink); color: var(--primary); font-weight: bold; padding-left: 20px; }
+        .dropdown-content a:hover, .dropdown-content a.active { background-color: var(--light-pink); color: var(--primary); font-weight: bold; padding-left: 20px; }
         .dropdown:hover .dropdown-content { display: block; }
 
         .category-title { text-align: center; color: var(--primary); margin: 30px 0 20px; font-size: 24px; text-transform: uppercase; }
@@ -199,10 +199,11 @@
             .menu-items { display: none; flex-direction: column; gap: 5px; margin-top: 5px; }
             .menu-items.show { display: flex; }
             .dropdown { width: 100%; }
-            .menu-btn { width: 100%; text-align: left; display: flex; justify-content: space-between; }
+            .menu-btn { width: 100%; text-align: left; display: flex; justify-content: space-between; align-items: center; }
             #btnAll { width: 100%; text-align: left; }
             .dropdown-content { position: static; box-shadow: none; border: none; border-left: 2px solid var(--accent); border-radius: 0; margin-left: 10px; margin-top: 5px; }
-            .dropdown:hover .dropdown-content, .dropdown:active .dropdown-content, .dropdown:focus-within .dropdown-content { display: block; }
+            .dropdown:hover .dropdown-content { display: none; }
+            .dropdown.open .dropdown-content { display: block; }
             .modal-content { width: 95% !important; max-width: 95% !important; padding: 15px !important; border-radius: 8px; }
             .slide-nav { width: 40px; height: 40px; font-size: 18px; }
             .slide-nav.prev { left: 8px; } .slide-nav.next { right: 8px; }
@@ -248,7 +249,7 @@
             <div class="menu-items" id="menuItems">
                 <button class="menu-btn active" id="btnAll" onclick="filterProducts('Tất cả')">Tất cả</button>
                 <div class="dropdown">
-                    <button class="menu-btn">Chính sách ▾</button>
+                    <button class="menu-btn" onclick="toggleDropdownMobile(event)">Chính sách ▾</button>
                     <div class="dropdown-content">
                         <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                         <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
@@ -443,6 +444,7 @@
         function showCustomAlert(message) { document.getElementById('customAlertText').innerHTML = message; document.getElementById('customAlertModal').style.display = 'flex'; }
         function closeCustomAlert() { document.getElementById('customAlertModal').style.display = 'none'; }
         function showPolicyDetail(title, content) { showCustomAlert(`<b>📌 ${title}</b><br><br>${content}`); }
+        function escapeJsStr(str) { return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
         function convertGoogleDriveUrl(url, sizeStr = 'w1200') {
             if (!url) return '';
@@ -543,7 +545,6 @@
                 const headersDM = rowsDM[0].map(h => h.toLowerCase().trim());
                 const findHeader = (names) => headersDM.findIndex(h => names.includes(h));
 
-                // BẮT CHÍNH XÁC CÁC CỘT THEO ẢNH BẢNG TỪ NGƯỜI DÙNG
                 const idIdx = findHeader(['mã sp', 'id', 'ma', 'mã', 'code', 'product_id', 'masp']);
                 const nameIdx = findHeader(['tên sp', 'name', 'ten', 'tên', 'product_name', 'tensp', 'sanpham']);
                 const catIdx = findHeader(['danh_muc', 'category', 'danhmuc', 'danh mục', 'phanloai', 'phân loại', 'loai', 'loại']);
@@ -561,7 +562,7 @@
                 const dateIdx = findHeader(['ngay nhap', 'ngày nhập', 'ngay them', 'ngày thêm', 'date', 'ngay', 'ngày']);
 
                 allProducts = rowsDM.slice(1).map((parts, idx) => {
-                    const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx] : (parts[1] || '');
+                    const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx].trim() : (parts[1] ? parts[1].trim() : '');
                     if (!prodName) return null;
 
                     const maSP = idIdx !== -1 && parts[idIdx] ? parts[idIdx].trim() : (parts[0] ? parts[0].trim() : `prod-${idx}`);
@@ -569,6 +570,9 @@
                     const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0;
                     const discounted = Math.round(numPrice * (1 - DISCOUNT_RATE));
                     const rawDate = dateIdx !== -1 && parts[dateIdx] ? parts[dateIdx].trim() : '';
+
+                    const rawCat = catIdx !== -1 && parts[catIdx] ? parts[catIdx].trim() : '';
+                    const rawSubCat = subCatIdx !== -1 && parts[subCatIdx] ? parts[subCatIdx].trim() : '';
 
                     const details = chiTietMap[maSP] || [];
                     const fallbackQty = qtyIdxOld !== -1 && parts[qtyIdxOld] ? parseInt(parts[qtyIdxOld].trim(), 10) || 0 : 0;
@@ -579,8 +583,8 @@
                     return {
                         id: maSP,
                         name: prodName,
-                        category: catIdx !== -1 && parts[catIdx] ? parts[catIdx] : 'Khác',
-                        subcategory: subCatIdx !== -1 && parts[subCatIdx] ? parts[subCatIdx] : '',
+                        category: rawCat || 'Khác',
+                        subcategory: rawSubCat,
                         price: rawPrice,
                         numericPrice: numPrice,
                         discountedPrice: discounted,
@@ -610,29 +614,48 @@
             }
         }
 
+        // TẠO MENU & SUB-MENU ĐỘNG TỪ CỘT danh_muc VÀ danh_muc2
         function buildDynamicMenu() {
             const menuItemsContainer = document.getElementById('menuItems');
-            let menuHTML = '<button class="menu-btn active" id="btnAll" onclick="filterProducts(\'Tất cả\')">Tất cả</button>';
-            const categoryMap = {};
+            let menuHTML = '<button class="menu-btn active" id="btnAll" data-cat="Tất cả" onclick="filterProducts(\'Tất cả\')">Tất cả</button>';
+
+            const categoryMap = new Map();
             allProducts.forEach(p => {
-                const cat = p.category;
-                if (!categoryMap[cat]) categoryMap[cat] = new Set();
-                if (p.subcategory && p.subcategory.trim() !== '') categoryMap[cat].add(p.subcategory.trim());
-            });
-            let dynamicCategoriesHTML = '';
-            for (const [cat, subcats] of Object.entries(categoryMap)) {
-                let subcatsHTML = '';
-                if (subcats.size > 0) {
-                    subcatsHTML += '<div class="dropdown-content">';
-                    subcats.forEach(subcat => { subcatsHTML += `<a onclick="event.stopPropagation(); filterProducts('${cat}', '${subcat}')">${subcat}</a>`; });
-                    subcatsHTML += '</div>';
+                const cat = p.category ? p.category.trim() : '';
+                if (!cat) return;
+                if (!categoryMap.has(cat)) categoryMap.set(cat, new Set());
+                if (p.subcategory && p.subcategory.trim() !== '') {
+                    categoryMap.get(cat).add(p.subcategory.trim());
                 }
-                dynamicCategoriesHTML += `<div class="dropdown"><button class="menu-btn" onclick="filterProducts('${cat}')">${cat} ▾</button>${subcatsHTML}</div>`;
+            });
+
+            let dynamicCategoriesHTML = '';
+            for (const [cat, subcats] of categoryMap.entries()) {
+                const safeCat = escapeJsStr(cat);
+                if (subcats.size > 0) {
+                    let subcatsHTML = '<div class="dropdown-content">';
+                    subcatsHTML += `<a data-cat="${safeCat}" data-sub="" onclick="event.stopPropagation(); filterProducts('${safeCat}', null)">Tất cả ${cat}</a>`;
+                    subcats.forEach(subcat => {
+                        const safeSub = escapeJsStr(subcat);
+                        subcatsHTML += `<a data-cat="${safeCat}" data-sub="${safeSub}" onclick="event.stopPropagation(); filterProducts('${safeCat}', '${safeSub}')">${subcat}</a>`;
+                    });
+                    subcatsHTML += '</div>';
+
+                    dynamicCategoriesHTML += `
+                        <div class="dropdown">
+                            <button class="menu-btn" data-cat="${safeCat}" onclick="handleParentMenuClick(event, '${safeCat}')">${cat} ▾</button>
+                            ${subcatsHTML}
+                        </div>
+                    `;
+                } else {
+                    dynamicCategoriesHTML += `<button class="menu-btn" data-cat="${safeCat}" onclick="filterProducts('${safeCat}', null)">${cat}</button>`;
+                }
             }
+
             menuHTML += dynamicCategoriesHTML;
             menuHTML += `
                 <div class="dropdown">
-                    <button class="menu-btn">Chính sách ▾</button>
+                    <button class="menu-btn" onclick="toggleDropdownMobile(event)">Chính sách ▾</button>
                     <div class="dropdown-content">
                         <a onclick="showPolicyDetail('Hướng dẫn đặt thuê', '1. Chọn sản phẩm cần thuê trên website hoặc gửi mẫu trực tiếp cho tiệm.<br>2. Chọn Size và số lượng phù hợp.<br>3. Thêm vào giỏ hàng và điền thông tin liên hệ để gửi đơn.<br>4. Tiệm sẽ liên hệ xác nhận lịch thuê và chốt đơn cho bạn.')">📋 Hướng dẫn đặt thuê</a>
                         <a onclick="showPolicyDetail('Chính sách đặt cọc', '1. Khách hàng vui lòng đặt cọc 10% giá trị đơn hàng trước khi nhận đồ.<br>2. Tiền cọc sẽ được hoàn trả hoặc cấn trừ ngay sau khi khách hàng trả lại đồ nguyên vẹn và đúng hạn.')">💰 Chính sách đặt cọc</a>
@@ -643,19 +666,60 @@
             menuItemsContainer.innerHTML = menuHTML;
         }
 
-        function toggleMobileMenu() { const menu = document.getElementById('menuItems'); const icon = document.getElementById('menuIcon'); menu.classList.toggle('show'); icon.innerText = menu.classList.contains('show') ? '▲' : '▼'; }
+        function handleParentMenuClick(event, category) {
+            if (window.innerWidth <= 768) {
+                event.stopPropagation();
+                toggleDropdownMobile(event);
+            } else {
+                filterProducts(category, null);
+            }
+        }
+
+        function toggleDropdownMobile(event) {
+            if (window.innerWidth <= 768) {
+                const dropdown = event.currentTarget.closest('.dropdown');
+                if (!dropdown) return;
+                const isOpen = dropdown.classList.contains('open');
+                document.querySelectorAll('#menuItems .dropdown.open').forEach(d => d.classList.remove('open'));
+                if (!isOpen) dropdown.classList.add('open');
+            }
+        }
+
+        function toggleMobileMenu() {
+            const menu = document.getElementById('menuItems');
+            const icon = document.getElementById('menuIcon');
+            menu.classList.toggle('show');
+            icon.innerText = menu.classList.contains('show') ? '▲' : '▼';
+            if (!menu.classList.contains('show')) {
+                document.querySelectorAll('#menuItems .dropdown.open').forEach(d => d.classList.remove('open'));
+            }
+        }
+
+        function updateActiveMenuUI(category, subcategory) {
+            document.querySelectorAll('#menuItems .menu-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-cat') === category);
+            });
+            document.querySelectorAll('#menuItems .dropdown-content a[data-cat]').forEach(link => {
+                const linkCat = link.getAttribute('data-cat');
+                const linkSub = link.getAttribute('data-sub');
+                const isMatch = (linkCat === category) && ((subcategory && linkSub === subcategory) || (!subcategory && linkSub === ''));
+                link.classList.toggle('active', isMatch);
+            });
+        }
 
         function filterProducts(category, subcategory = null) {
             document.getElementById('searchInput').value = '';
-            isAISearchMode = false; currentActiveCategory = category; currentActiveSubcategory = subcategory; currentPage = 1;
-            const btnAll = document.getElementById('btnAll');
-            if (btnAll) btnAll.classList.remove('active');
-            if(category === 'Tất cả' && btnAll) btnAll.classList.add('active');
+            isAISearchMode = false;
+            currentActiveCategory = category;
+            currentActiveSubcategory = subcategory;
+            currentPage = 1;
+
+            updateActiveMenuUI(category, subcategory);
+
             if (window.innerWidth <= 768) {
-                if (subcategory || category === 'Tất cả') {
-                    document.getElementById('menuItems').classList.remove('show');
-                    document.getElementById('menuIcon').innerText = '▼';
-                }
+                document.getElementById('menuItems').classList.remove('show');
+                document.getElementById('menuIcon').innerText = '▼';
+                document.querySelectorAll('#menuItems .dropdown.open').forEach(d => d.classList.remove('open'));
             }
             renderFilteredProducts();
         }
@@ -724,6 +788,7 @@
             });
             if (matchedProduct) {
                 isAISearchMode = true; currentActiveCategory = 'Tất cả'; currentActiveSubcategory = null;
+                updateActiveMenuUI('Tất cả', null);
                 document.getElementById('searchInput').value = `${matchedProduct.id} ${matchedProduct.name}`;
                 document.getElementById('currentCategoryTitle').innerText = `✨ Tìm thấy mẫu khớp & trang phục tương tự (~85%):`;
                 currentPage = 1; renderFilteredProducts(); event.target.value = ''; return;
@@ -742,11 +807,13 @@
                     document.getElementById('currentCategoryTitle').innerText = `✨ Trang phục tương tự AI gợi ý: "${searchKeywords}"`;
                 }
                 isAISearchMode = true; currentActiveCategory = 'Tất cả'; currentActiveSubcategory = null;
+                updateActiveMenuUI('Tất cả', null);
                 document.getElementById('searchInput').value = searchKeywords; currentPage = 1; renderFilteredProducts();
             } catch (error) {
                 console.error("Lỗi AI Search:", error);
                 const fallbackKw = await extractFallbackKeywordsFromImage(file);
                 isAISearchMode = true; currentActiveCategory = 'Tất cả'; currentActiveSubcategory = null;
+                updateActiveMenuUI('Tất cả', null);
                 document.getElementById('searchInput').value = fallbackKw;
                 document.getElementById('currentCategoryTitle').innerText = `✨ Máy chủ AI đang bận, tự động lọc theo màu sắc: "${fallbackKw}"`;
                 currentPage = 1; renderFilteredProducts();
