@@ -189,6 +189,27 @@
         }
         .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(219, 112, 147, 0.2); }
 
+        /* HUY HIỆU HÀNG MỚI */
+        .new-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #ff4757;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+            z-index: 5;
+            text-transform: uppercase;
+            animation: pulse-badge 1.5s infinite;
+        }
+        @keyframes pulse-badge {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+        }
+
         .product-card img.main-img { width: 100%; height: 260px; object-fit: contain; padding: 5px; border-bottom: 1px solid var(--light-pink); transition: 0.3s; background-color: #f9f9f9; cursor: pointer; }
         .product-info { padding: 15px; display: flex; flex-direction: column; flex-grow: 1; }
         .product-code { font-size: 12px; color: #888; margin-bottom: 4px; font-weight: 600; }
@@ -798,7 +819,7 @@
         }
 
         // ================= CẤU HÌNH HỆ THỐNG =================
-        const DISCOUNT_RATE = 0; // TẮT KHUYẾN MÃI (0%)
+        const DISCOUNT_RATE = 0; // TẮT KHUYẾN MÃI
         
         // 1. LINK GHI ĐƠN HÀNG (Google Apps Script Web App)
         const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxHvUj1wusb4SlCnJmY3Qm8nYGQNojYrapfO_a9LRdUWqw6CGWp1sxN2qAUZL87Pz8sDQ/exec';
@@ -923,6 +944,32 @@
             return rows;
         }
 
+        // Hàm kiểm tra xem ngày thêm sản phẩm có nằm trong vòng 30 ngày qua không
+        function checkIsNewProduct(dateStr) {
+            if (!dateStr) return false;
+            let dStr = dateStr.trim().split(' ')[0]; // Bỏ phần giờ phút nếu có
+            let parts = dStr.split(/[-/]/); // Tách chuỗi theo dấu "-" hoặc "/"
+            if (parts.length !== 3) return false;
+            
+            let year = parts[2];
+            let month = parts[1];
+            let day = parts[0];
+
+            // Nếu định dạng là Năm-Tháng-Ngày (YYYY-MM-DD)
+            if (parts[0].length === 4) {
+                year = parts[0];
+                month = parts[1];
+                day = parts[2];
+            }
+            
+            let uploadDate = new Date(`${year}-${month}-${day}`);
+            if (isNaN(uploadDate.getTime())) return false; // Ngày không hợp lệ
+            
+            // Tính số ngày chênh lệch giữa hiện tại và ngày upload
+            let diffDays = (Date.now() - uploadDate.getTime()) / (1000 * 60 * 60 * 24);
+            return diffDays >= 0 && diffDays <= 30; // Trả về true nếu trong vòng 30 ngày
+        }
+
         async function fetchSheetData() {
             const sheetIdMatch = GOOGLE_SHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
             if (!sheetIdMatch) {
@@ -963,6 +1010,9 @@
                 const img3Idx = findHeader(['image3', 'img3', 'anh3', 'ảnh 3', 'hinh3', 'hình 3']);
                 const img4Idx = findHeader(['image4', 'img4', 'anh4', 'ảnh 4', 'hinh4', 'hình 4']);
                 const img5Idx = findHeader(['image5', 'img5', 'anh5', 'ảnh 5', 'hinh5', 'hình 5']);
+                
+                // Tìm cột Ngày nhập để xác định hàng mới
+                const dateIdx = findHeader(['ngay nhap', 'ngày nhập', 'ngay them', 'ngày thêm', 'date', 'ngay', 'ngày']);
 
                 allProducts = rows.slice(1).map((parts, idx) => {
                     const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx] : (parts[1] || '');
@@ -971,6 +1021,8 @@
                     const rawPrice = priceIdx !== -1 && parts[priceIdx] ? parts[priceIdx] : '0đ';
                     const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0;
                     const discounted = Math.round(numPrice * (1 - DISCOUNT_RATE));
+                    
+                    const rawDate = dateIdx !== -1 && parts[dateIdx] ? parts[dateIdx].trim() : '';
 
                     return {
                         id: idIdx !== -1 && parts[idIdx] ? parts[idIdx].trim() : (parts[0] ? parts[0].trim() : `prod-${idx}`),
@@ -986,7 +1038,8 @@
                         image2: img2Idx !== -1 ? parts[img2Idx] : '',
                         image3: img3Idx !== -1 ? parts[img3Idx] : '',
                         image4: img4Idx !== -1 ? parts[img4Idx] : '',
-                        image5: img5Idx !== -1 ? parts[img5Idx] : ''
+                        image5: img5Idx !== -1 ? parts[img5Idx] : '',
+                        isNew: checkIsNewProduct(rawDate) // Gắn cờ hàng mới
                     };
                 }).filter(p => p !== null);
 
@@ -1380,8 +1433,12 @@
                 
                 const quantityText = product.quantity !== '' ? ` | Số lượng: ${product.quantity}` : '';
                 
+                // Hiển thị nhãn MỚI nếu đủ điều kiện
+                const newBadgeHtml = product.isNew ? `<span class="new-badge">✨ MỚI</span>` : '';
+                
                 grid.innerHTML += `
                     <div class="product-card">
+                        ${newBadgeHtml}
                         <img class="main-img" src="${mainImg}" loading="lazy" decoding="async" alt="${product.name}" onclick="openAlbum('${product.id}')" onerror="this.src='https://via.placeholder.com/400?text=Lỗi+Ảnh'">
                         <div class="product-info">
                             <span class="product-code">Mã: <b>${product.id}</b>${quantityText}</span>
