@@ -497,122 +497,124 @@
         }
 
         // FETCH DATA TỪ 2 SHEET (danh_muc & chi_tiet)
-        async function fetchSheetData() {
-            const sheetIdMatch = GOOGLE_SHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
-            if (!sheetIdMatch) {
-                document.getElementById('currentCategoryTitle').innerText = 'Lỗi liên kết';
-                document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Link Google Sheets không hợp lệ!</p>';
-                return;
-            }
+async function fetchSheetData() {
+    const sheetIdMatch = GOOGLE_SHEET_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    if (!sheetIdMatch) {
+        document.getElementById('currentCategoryTitle').innerText = 'Lỗi liên kết';
+        document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Link Google Sheets không hợp lệ!</p>';
+        return;
+    }
 
-            const sheetId = sheetIdMatch[1];
-            const danhMucUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=danh_muc`;
-            const chiTietUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=chi_tiet`;
+    const sheetId = sheetIdMatch[1];
+    // Thêm &headers=1 để ép Google Sheets luôn lấy đúng dòng 1 làm tiêu đề
+    const danhMucUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&headers=1&sheet=danh_muc`;
+    const chiTietUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&headers=1&sheet=chi_tiet`;
 
-            try {
-                const [danhMucRes, chiTietRes] = await Promise.all([ fetch(danhMucUrl), fetch(chiTietUrl) ]);
-                if (!danhMucRes.ok || !chiTietRes.ok) throw new Error('Không thể tải dữ liệu từ Google Sheets');
-                
-                const danhMucCSV = await danhMucRes.text();
-                const chiTietCSV = await chiTietRes.text();
+    try {
+        const [danhMucRes, chiTietRes] = await Promise.all([ fetch(danhMucUrl), fetch(chiTietUrl) ]);
+        if (!danhMucRes.ok || !chiTietRes.ok) throw new Error('Không thể tải dữ liệu từ Google Sheets');
+        
+        const danhMucCSV = await danhMucRes.text();
+        const chiTietCSV = await chiTietRes.text();
 
-                const rowsDM = parseFullCSV(danhMucCSV);
-                const rowsCT = parseFullCSV(chiTietCSV);
-                
-                if (rowsDM.length < 2) throw new Error('File danh_muc trống');
+        const rowsDM = parseFullCSV(danhMucCSV);
+        const rowsCT = parseFullCSV(chiTietCSV);
+        
+        if (rowsDM.length < 2) throw new Error('File danh_muc trống');
 
-                const chiTietMap = {};
-                if (rowsCT.length >= 2) {
-                    const headersCT = rowsCT[0].map(h => h.toLowerCase().trim());
-                    const idIdxCT = headersCT.findIndex(h => ['mã sp', 'id', 'ma', 'mã', 'code', 'masp'].includes(h));
-                    const sizeIdx = headersCT.findIndex(h => ['size', 'kichthuoc', 'kích thước', 'kích cỡ'].includes(h));
-                    const qtyIdx = headersCT.findIndex(h => ['so_luong', 'soluong', 'số lượng', 'quantity', 'sl'].includes(h));
-                    const specsIdx = headersCT.findIndex(h => ['chitiet', 'chi tiết', 'thongso', 'thông số'].includes(h));
+        const chiTietMap = {};
+        if (rowsCT.length >= 2) {
+            const headersCT = rowsCT[0].map(h => h.toLowerCase().trim());
+            const idIdxCT = headersCT.findIndex(h => ['mã sp', 'ma_sp', 'mã_sp', 'id', 'ma', 'mã', 'code', 'masp'].includes(h));
+            const sizeIdx = headersCT.findIndex(h => ['size', 'kích cỡ', 'kichco'].includes(h));
+            const qtyIdx = headersCT.findIndex(h => ['so_luong', 'soluong', 'số lượng', 'quantity', 'sl'].includes(h));
+            const specsIdx = headersCT.findIndex(h => ['kích thước', 'kichthuoc', 'chitiet', 'chi tiết', 'thongso', 'thông số'].includes(h));
 
-                    rowsCT.slice(1).forEach(parts => {
-                        if (idIdxCT !== -1 && parts[idIdxCT]) {
-                            const maSP = parts[idIdxCT].trim();
-                            if (!chiTietMap[maSP]) chiTietMap[maSP] = [];
-                            chiTietMap[maSP].push({
-                                size: sizeIdx !== -1 && parts[sizeIdx] ? parts[sizeIdx].trim() : 'Freesize',
-                                qty: qtyIdx !== -1 && parts[qtyIdx] ? parseInt(parts[qtyIdx].trim(), 10) || 0 : 0,
-                                specs: specsIdx !== -1 && parts[specsIdx] ? parts[specsIdx].trim() : ''
-                            });
-                        }
+            rowsCT.slice(1).forEach(parts => {
+                if (idIdxCT !== -1 && parts[idIdxCT] && parts[idIdxCT].trim() !== '') {
+                    const maKey = parts[idIdxCT].trim().toUpperCase();
+                    if (!chiTietMap[maKey]) chiTietMap[maKey] = [];
+                    chiTietMap[maKey].push({
+                        size: sizeIdx !== -1 && parts[sizeIdx] ? parts[sizeIdx].trim() : 'Freesize',
+                        qty: qtyIdx !== -1 && parts[qtyIdx] ? parseInt(String(parts[qtyIdx]).replace(/[^0-9]/g, ''), 10) || 0 : 0,
+                        specs: specsIdx !== -1 && parts[specsIdx] ? parts[specsIdx].trim() : ''
                     });
                 }
-
-                const headersDM = rowsDM[0].map(h => h.toLowerCase().trim());
-                const findHeader = (names) => headersDM.findIndex(h => names.includes(h));
-
-                const idIdx = findHeader(['mã sp', 'id', 'ma', 'mã', 'code', 'product_id', 'masp']);
-                const nameIdx = findHeader(['tên sp', 'name', 'ten', 'tên', 'product_name', 'tensp', 'sanpham']);
-                const catIdx = findHeader(['danh_muc', 'category', 'danhmuc', 'danh mục', 'phanloai', 'phân loại', 'loai', 'loại']);
-                const subCatIdx = findHeader(['danh_muc2', 'subcategory', 'sub_category', 'danhmuccon', 'danh mục con', 'phanloaicon']);
-                const priceIdx = findHeader(['giá_thuê', 'price', 'gia', 'giá', 'giá tiền', 'giatien', 'dongia', 'đơn giá']);
-                
-                const sizesIdxOld = findHeader(['sizes', 'size', 'kichthuoc', 'kích thước']);
-                const qtyIdxOld = findHeader(['so_luong', 'soluong', 'số lượng', 'quantity', 'qty', 'sl']);
-                
-                const img1Idx = findHeader(['image1', 'img1', 'anh1', 'ảnh 1', 'hinh1', 'hình 1', 'image', 'ảnh', 'hinh']);
-                const img2Idx = findHeader(['image2', 'img2', 'anh2', 'ảnh 2', 'hinh2', 'hình 2']);
-                const img3Idx = findHeader(['image3', 'img3', 'anh3', 'ảnh 3', 'hinh3', 'hình 3']);
-                const img4Idx = findHeader(['image4', 'img4', 'anh4', 'ảnh 4', 'hinh4', 'hình 4']);
-                const img5Idx = findHeader(['image5', 'img5', 'anh5', 'ảnh 5', 'hinh5', 'hình 5']);
-                const dateIdx = findHeader(['ngay nhap', 'ngày nhập', 'ngay them', 'ngày thêm', 'date', 'ngay', 'ngày']);
-
-                allProducts = rowsDM.slice(1).map((parts, idx) => {
-                    const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx].trim() : (parts[1] ? parts[1].trim() : '');
-                    if (!prodName) return null;
-
-                    const maSP = idIdx !== -1 && parts[idIdx] ? parts[idIdx].trim() : (parts[0] ? parts[0].trim() : `prod-${idx}`);
-                    const rawPrice = priceIdx !== -1 && parts[priceIdx] ? parts[priceIdx] : '0đ';
-                    const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0;
-                    const discounted = Math.round(numPrice * (1 - DISCOUNT_RATE));
-                    const rawDate = dateIdx !== -1 && parts[dateIdx] ? parts[dateIdx].trim() : '';
-
-                    const rawCat = catIdx !== -1 && parts[catIdx] ? parts[catIdx].trim() : '';
-                    const rawSubCat = subCatIdx !== -1 && parts[subCatIdx] ? parts[subCatIdx].trim() : '';
-
-                    const details = chiTietMap[maSP] || [];
-                    const fallbackQty = qtyIdxOld !== -1 && parts[qtyIdxOld] ? parseInt(parts[qtyIdxOld].trim(), 10) || 0 : 0;
-                    const fallbackSizes = sizesIdxOld !== -1 && parts[sizesIdxOld] ? parts[sizesIdxOld].trim() : 'Freesize';
-                    
-                    const totalQty = details.length > 0 ? details.reduce((sum, det) => sum + det.qty, 0) : fallbackQty;
-
-                    return {
-                        id: maSP,
-                        name: prodName,
-                        category: rawCat || 'Khác',
-                        subcategory: rawSubCat,
-                        price: rawPrice,
-                        numericPrice: numPrice,
-                        discountedPrice: discounted,
-                        details: details, 
-                        totalQty: totalQty, 
-                        fallbackSizes: fallbackSizes, 
-                        image1: img1Idx !== -1 ? parts[img1Idx] : '',
-                        image2: img2Idx !== -1 ? parts[img2Idx] : '',
-                        image3: img3Idx !== -1 ? parts[img3Idx] : '',
-                        image4: img4Idx !== -1 ? parts[img4Idx] : '',
-                        image5: img5Idx !== -1 ? parts[img5Idx] : '',
-                        isNew: checkIsNewProduct(rawDate)
-                    };
-                }).filter(p => p !== null);
-
-                if (allProducts.length > 0) {
-                    buildDynamicMenu();
-                    renderFilteredProducts();
-                } else {
-                    document.getElementById('currentCategoryTitle').innerText = 'Thông báo';
-                    document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #888;">Không tìm thấy sản phẩm nào trong file.</p>';
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('currentCategoryTitle').innerText = 'Lỗi kết nối';
-                document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Lỗi đọc dữ liệu. Đảm bảo tên sheet trong Google Sheets chuẩn xác là "danh_muc" và "chi_tiet".</p>';
-            }
+            });
         }
+
+        const headersDM = rowsDM[0].map(h => h.toLowerCase().trim());
+        const findHeader = (names) => headersDM.findIndex(h => names.includes(h));
+
+        const idIdx = findHeader(['mã sp', 'ma_sp', 'mã_sp', 'id', 'ma', 'mã', 'code', 'product_id', 'masp']);
+        const nameIdx = findHeader(['tên sp', 'name', 'ten', 'tên', 'product_name', 'tensp', 'sanpham']);
+        const catIdx = findHeader(['danh_muc', 'category', 'danhmuc', 'danh mục', 'phanloai', 'phân loại', 'loai', 'loại']);
+        const subCatIdx = findHeader(['danh_muc2', 'subcategory', 'sub_category', 'danhmuccon', 'danh mục con', 'phanloaicon']);
+        const priceIdx = findHeader(['giá_thuê', 'price', 'gia', 'giá', 'giá tiền', 'giatien', 'dongia', 'đơn giá']);
+        
+        const sizesIdxOld = findHeader(['sizes', 'size', 'kichthuoc', 'kích thước']);
+        const qtyIdxOld = findHeader(['so_luong', 'soluong', 'số lượng', 'quantity', 'qty', 'sl']);
+        
+        const img1Idx = findHeader(['image1', 'img1', 'anh1', 'ảnh 1', 'hinh1', 'hình 1', 'image', 'ảnh', 'hinh']);
+        const img2Idx = findHeader(['image2', 'img2', 'anh2', 'ảnh 2', 'hinh2', 'hình 2']);
+        const img3Idx = findHeader(['image3', 'img3', 'anh3', 'ảnh 3', 'hinh3', 'hình 3']);
+        const img4Idx = findHeader(['image4', 'img4', 'anh4', 'ảnh 4', 'hinh4', 'hình 4']);
+        const img5Idx = findHeader(['image5', 'img5', 'anh5', 'ảnh 5', 'hinh5', 'hình 5']);
+        const dateIdx = findHeader(['ngay nhap', 'ngày nhập', 'ngay them', 'ngày thêm', 'date', 'ngay', 'ngày']);
+
+        allProducts = rowsDM.slice(1).map((parts, idx) => {
+            const prodName = nameIdx !== -1 && parts[nameIdx] ? parts[nameIdx].trim() : (parts[1] ? parts[1].trim() : '');
+            if (!prodName) return null;
+
+            const maSP = idIdx !== -1 && parts[idIdx] ? parts[idIdx].trim() : (parts[0] ? parts[0].trim() : `prod-${idx}`);
+            const rawPrice = priceIdx !== -1 && parts[priceIdx] ? parts[priceIdx] : '0đ';
+            const numPrice = parseInt(String(rawPrice).replace(/[^0-9]/g, ''), 10) || 0;
+            const discounted = Math.round(numPrice * (1 - DISCOUNT_RATE));
+            const rawDate = dateIdx !== -1 && parts[dateIdx] ? parts[dateIdx].trim() : '';
+
+            const rawCat = catIdx !== -1 && parts[catIdx] ? parts[catIdx].trim() : '';
+            const rawSubCat = subCatIdx !== -1 && parts[subCatIdx] ? parts[subCatIdx].trim() : '';
+
+            // Tra cứu bằng mã in hoa để tránh lệch hoa/thường
+            const details = chiTietMap[maSP.toUpperCase()] || [];
+            const fallbackQty = qtyIdxOld !== -1 && parts[qtyIdxOld] ? parseInt(parts[qtyIdxOld].trim(), 10) || 0 : 0;
+            const fallbackSizes = sizesIdxOld !== -1 && parts[sizesIdxOld] ? parts[sizesIdxOld].trim() : 'Freesize';
+            
+            const totalQty = details.length > 0 ? details.reduce((sum, det) => sum + det.qty, 0) : fallbackQty;
+
+            return {
+                id: maSP,
+                name: prodName,
+                category: rawCat || 'Khác',
+                subcategory: rawSubCat,
+                price: rawPrice,
+                numericPrice: numPrice,
+                discountedPrice: discounted,
+                details: details, 
+                totalQty: totalQty, 
+                fallbackSizes: fallbackSizes, 
+                image1: img1Idx !== -1 ? parts[img1Idx] : '',
+                image2: img2Idx !== -1 ? parts[img2Idx] : '',
+                image3: img3Idx !== -1 ? parts[img3Idx] : '',
+                image4: img4Idx !== -1 ? parts[img4Idx] : '',
+                image5: img5Idx !== -1 ? parts[img5Idx] : '',
+                isNew: checkIsNewProduct(rawDate)
+            };
+        }).filter(p => p !== null);
+
+        if (allProducts.length > 0) {
+            buildDynamicMenu();
+            renderFilteredProducts();
+        } else {
+            document.getElementById('currentCategoryTitle').innerText = 'Thông báo';
+            document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #888;">Không tìm thấy sản phẩm nào trong file.</p>';
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('currentCategoryTitle').innerText = 'Lỗi kết nối';
+        document.getElementById('productGrid').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Lỗi đọc dữ liệu. Đảm bảo tên sheet trong Google Sheets chuẩn xác là "danh_muc" và "chi_tiet".</p>';
+    }
+}
 
         // TẠO MENU & SUB-MENU ĐỘNG TỪ CỘT danh_muc VÀ danh_muc2
         function buildDynamicMenu() {
