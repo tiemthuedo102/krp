@@ -441,8 +441,19 @@
         let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0; let isSwiping = false;
         
         function formatMoney(num) { return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
-        function showCustomAlert(message) { document.getElementById('customAlertText').innerHTML = message; document.getElementById('customAlertModal').style.display = 'flex'; }
-        function closeCustomAlert() { document.getElementById('customAlertModal').style.display = 'none'; }
+        function showCustomAlert(message) {
+            document.getElementById('customAlertText').innerHTML = message;
+            document.getElementById('customAlertModal').style.display = 'flex';
+            if (!history.state || history.state.modal !== 'customAlertModal') {
+                history.pushState({ modal: 'customAlertModal' }, '');
+            }
+        }
+        function closeCustomAlert(fromPopState = false) {
+            document.getElementById('customAlertModal').style.display = 'none';
+            if (!fromPopState && history.state && history.state.modal === 'customAlertModal') {
+                history.back();
+            }
+        }
         function showPolicyDetail(title, content) { showCustomAlert(`<b>📌 ${title}</b><br><br>${content}`); }
         function escapeJsStr(str) { return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
@@ -961,7 +972,6 @@
             document.getElementById('albumModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
-            // Thêm mốc lịch sử để bấm nút Back trên điện thoại chỉ đóng ảnh
             if (!history.state || history.state.modal !== 'albumModal') {
                 history.pushState({ modal: 'albumModal' }, '');
             }
@@ -1076,6 +1086,9 @@
             
             onSizeChange();
             document.getElementById('orderModal').style.display = 'flex';
+            if (!history.state || history.state.modal !== 'orderModal') {
+                history.pushState({ modal: 'orderModal' }, '');
+            }
         }
 
         function onSizeChange() {
@@ -1215,6 +1228,9 @@
                 document.getElementById('receiveAmountDisplay').innerText = `${formatMoney(receiveAmount)}đ`;
             }
             document.getElementById('cartModal').style.display = 'flex';
+            if (!history.state || history.state.modal !== 'cartModal') {
+                history.pushState({ modal: 'cartModal' }, '');
+            }
         }
 
         function removeItem(index) { cart.splice(index, 1); document.getElementById('cartCountBadge').innerText = cart.reduce((sum, i) => sum + i.qty, 0); openCart(); }
@@ -1259,8 +1275,9 @@
                 const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
                 await Promise.all([sheetPromise, telegramPromise]);
 
+                cart = []; nameInput.value = ''; phoneInput.value = ''; addressInput.value = ''; rentalDateInput.value = ''; returnDateInput.value = ''; document.getElementById('cartCountBadge').innerText = 0;
+                closeModal('cartModal');
                 showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.");
-                cart = []; nameInput.value = ''; phoneInput.value = ''; addressInput.value = ''; rentalDateInput.value = ''; returnDateInput.value = ''; document.getElementById('cartCountBadge').innerText = 0; closeModal('cartModal');
             } catch (err) {
                 console.error(err); showCustomAlert("Có lỗi kết nối. Quý khách vui lòng gọi trực tiếp hotline: <b>0365 630 354</b> để chốt đơn!");
             } finally { btn.innerHTML = "📩 Gửi đơn tới shop!<br />SĐT: 0365.630.354"; btn.disabled = false; }
@@ -1277,16 +1294,25 @@
             if (id === 'albumModal') {
                 resetZoom(false);
                 document.body.style.overflow = '';
-                if (!fromPopState && history.state && history.state.modal === 'albumModal') {
-                    history.back();
-                }
+            }
+            if (!fromPopState && history.state && history.state.modal === id) {
+                history.back();
             }
         }
 
         window.addEventListener('popstate', () => {
-            const albumModal = document.getElementById('albumModal');
-            if (albumModal && albumModal.style.display === 'flex') {
-                closeModal('albumModal', true);
+            const customAlert = document.getElementById('customAlertModal');
+            if (customAlert && customAlert.style.display === 'flex') {
+                closeCustomAlert(true);
+                return;
+            }
+            const modals = ['albumModal', 'orderModal', 'cartModal'];
+            for (const modalId of modals) {
+                const modal = document.getElementById(modalId);
+                if (modal && modal.style.display === 'flex') {
+                    closeModal(modalId, true);
+                    return;
+                }
             }
         });
 
