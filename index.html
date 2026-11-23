@@ -1268,24 +1268,53 @@
             const btn = document.getElementById('checkoutBtn'); btn.innerText = "Đang gửi đơn..."; btn.disabled = true;
 
             try {
-               const formData = new URLSearchParams();
-                    formData.append('productCode', productCodesList);
-                    formData.append('timeString', timeString);
-                    formData.append('name', nameVal);
-                    formData.append('phone', phoneVal);
-                    formData.append('address', addressVal);
-                    formData.append('rentalDate', formatDateVN(rentalVal));
-                    formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
-                    formData.append('itemsDetail', itemsDetailArr.join(';\n'));
-                    formData.append('total', baseTotal);
-                    formData.append('deposit', deposit);
-                    formData.append('extraFee', extraFee);
-                    formData.append('remaining', receiveAmount);
-                    formData.append('totalQty', totalItemsCount);
-                    formData.append('cartJson', JSON.stringify(cart)); // <-- THÊM DÒNG NÀY
+                const formData = new URLSearchParams();
+                formData.append('productCode', productCodesList);
+                formData.append('timeString', timeString);
+                formData.append('name', nameVal);
+                formData.append('phone', phoneVal);
+                formData.append('address', addressVal);
+                formData.append('rentalDate', formatDateVN(rentalVal));
+                formData.append('returnDate', `${formatDateVN(returnVal)} (${rentalDays} ngày)`);
+                formData.append('itemsDetail', itemsDetailArr.join(';\n'));
+                formData.append('total', baseTotal);
+                formData.append('deposit', deposit);
+                formData.append('extraFee', extraFee);
+                formData.append('remaining', receiveAmount);
+                formData.append('totalQty', totalItemsCount);
+                formData.append('cartJson', JSON.stringify(cart));
+
+                const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'Markdown' })
+                }).catch(e => console.error("Lỗi gửi Telegram:", e));
+
+                const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    body: formData
+                });
+
+                await Promise.all([sheetPromise, telegramPromise]);
+
+                cart = [];
+                nameInput.value = '';
+                phoneInput.value = '';
+                addressInput.value = '';
+                rentalDateInput.value = '';
+                returnDateInput.value = '';
+                document.getElementById('cartCountBadge').innerText = 0;
+
+                closeModal('cartModal');
+                showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.");
             } catch (err) {
-                console.error(err); showCustomAlert("Có lỗi kết nối. Quý khách vui lòng gọi trực tiếp hotline: <b>0365 630 354</b> để chốt đơn!");
-            } finally { btn.innerHTML = "📩 Gửi đơn tới shop!<br />SĐT: 0365.630.354"; btn.disabled = false; }
+                console.error(err);
+                showCustomAlert("Có lỗi kết nối. Quý khách vui lòng gọi trực tiếp hotline: <b>0365 630 354</b> để chốt đơn!");
+            } finally {
+                btn.innerHTML = "📩 Gửi đơn tới shop!<br />SĐT: 0365.630.354";
+                btn.disabled = false;
+            }
         }
 
         async function trackVisitorCount() {
