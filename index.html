@@ -131,6 +131,7 @@
         .modal-title { color: var(--primary); margin-top: 0; margin-bottom: 15px; font-size: 18px; }
         
         #cartModal .modal-content { width: 450px !important; max-width: 95vw !important; min-width: 320px !important; }
+        #customAlertModal { z-index: 3000 !important; }
 
         #albumModal { padding: 0 !important; background: rgba(255, 255, 255, 0.96) !important; z-index: 2000; user-select: none; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
         #albumModal .fullscreen-content { width: 100vw; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; align-items: center; position: relative; background: transparent; overflow: hidden; }
@@ -439,19 +440,41 @@
         let zoomScale = 1; let panX = 0; let panY = 0; let startPanX = 0; let startPanY = 0;
         let initialPinchDist = 0; let initialZoomScale = 1; let isPinching = false; let isPanning = false; let isDraggingMouse = false; let lastTapTime = 0;
         let touchStartX = 0; let touchStartY = 0; let touchEndX = 0; let touchEndY = 0; let isSwiping = false;
+
+        function safePushModalState(modalName) {
+            try {
+                if (!history.state || history.state.modal !== modalName) {
+                    history.pushState({ modal: modalName }, '');
+                }
+            } catch (e) {}
+        }
+
+        function safeReplaceModalState(modalName) {
+            try {
+                history.replaceState({ modal: modalName }, '');
+            } catch (e) {}
+        }
+
+        function safeHistoryBack(modalName) {
+            try {
+                if (history.state && history.state.modal === modalName) {
+                    history.back();
+                }
+            } catch (e) {}
+        }
         
         function formatMoney(num) { return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
-        function showCustomAlert(message) {
+        function showCustomAlert(message, skipPushState = false) {
             document.getElementById('customAlertText').innerHTML = message;
             document.getElementById('customAlertModal').style.display = 'flex';
-            if (!history.state || history.state.modal !== 'customAlertModal') {
-                history.pushState({ modal: 'customAlertModal' }, '');
+            if (!skipPushState) {
+                safePushModalState('customAlertModal');
             }
         }
         function closeCustomAlert(fromPopState = false) {
             document.getElementById('customAlertModal').style.display = 'none';
-            if (!fromPopState && history.state && history.state.modal === 'customAlertModal') {
-                history.back();
+            if (!fromPopState) {
+                safeHistoryBack('customAlertModal');
             }
         }
         function showPolicyDetail(title, content) { showCustomAlert(`<b>📌 ${title}</b><br><br>${content}`); }
@@ -971,10 +994,7 @@
             resetZoom(false);
             document.getElementById('albumModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
-
-            if (!history.state || history.state.modal !== 'albumModal') {
-                history.pushState({ modal: 'albumModal' }, '');
-            }
+            safePushModalState('albumModal');
         }
 
         function changeSlide(step) {
@@ -1086,9 +1106,7 @@
             
             onSizeChange();
             document.getElementById('orderModal').style.display = 'flex';
-            if (!history.state || history.state.modal !== 'orderModal') {
-                history.pushState({ modal: 'orderModal' }, '');
-            }
+            safePushModalState('orderModal');
         }
 
         function onSizeChange() {
@@ -1228,9 +1246,7 @@
                 document.getElementById('receiveAmountDisplay').innerText = `${formatMoney(receiveAmount)}đ`;
             }
             document.getElementById('cartModal').style.display = 'flex';
-            if (!history.state || history.state.modal !== 'cartModal') {
-                history.pushState({ modal: 'cartModal' }, '');
-            }
+            safePushModalState('cartModal');
         }
 
         function removeItem(index) { cart.splice(index, 1); document.getElementById('cartCountBadge').innerText = cart.reduce((sum, i) => sum + i.qty, 0); openCart(); }
@@ -1284,19 +1300,19 @@
                 formData.append('totalQty', totalItemsCount);
                 formData.append('cartJson', JSON.stringify(cart));
 
-                const telegramPromise = fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                // Gửi Telegram chạy nền để không làm treo thông báo nếu nhà mạng chặn Telegram
+                fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'Markdown' })
                 }).catch(e => console.error("Lỗi gửi Telegram:", e));
 
-                const sheetPromise = fetch(GOOGLE_APPS_SCRIPT_URL, {
+                // Chờ gửi đơn về Google Sheets
+                await fetch(GOOGLE_APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
                     body: formData
                 });
-
-                await Promise.all([sheetPromise, telegramPromise]);
 
                 cart = [];
                 nameInput.value = '';
@@ -1306,9 +1322,10 @@
                 returnDateInput.value = '';
                 document.getElementById('cartCountBadge').innerText = 0;
 
-                closeModal('cartModal', true);
-                history.replaceState({ modal: 'customAlertModal' }, '');
-                showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.");
+                // Đóng giỏ hàng trực tiếp (không gọi history.back) và hiện thông báo ngay lập tức
+                document.getElementById('cartModal').style.display = 'none';
+                safeReplaceModalState('customAlertModal');
+                showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.", true);
             } catch (err) {
                 console.error(err);
                 showCustomAlert("Có lỗi kết nối. Quý khách vui lòng gọi trực tiếp hotline: <b>0365 630 354</b> để chốt đơn!");
@@ -1330,8 +1347,8 @@
                 resetZoom(false);
                 document.body.style.overflow = '';
             }
-            if (!fromPopState && history.state && history.state.modal === id) {
-                history.back();
+            if (!fromPopState) {
+                safeHistoryBack(id);
             }
         }
 
