@@ -1306,7 +1306,8 @@
                 returnDateInput.value = '';
                 document.getElementById('cartCountBadge').innerText = 0;
 
-                closeModal('cartModal');
+                closeModal('cartModal', true);
+                history.replaceState({ modal: 'customAlertModal' }, '');
                 showCustomAlert("Quý khách đã gửi đơn hàng thành công tới shop!<br><b>SĐT Shop: 0365 630 354</b><br>Shop sẽ liên hệ xác nhận lại ngay.");
             } catch (err) {
                 console.error(err);
