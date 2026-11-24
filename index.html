@@ -124,7 +124,7 @@
         .footer-col p a.map-link { color: #ffb6c1; text-decoration: underline; display: inline; margin: 0; transition: 0.2s; }
         .footer-col p a.map-link:hover { color: #ffffff; padding-left: 0; }
         .footer-bottom { text-align: center; padding-top: 20px; margin-top: 40px; border-top: 1px solid #34495e; font-size: 13px; color: #7f8c8d; }
-        #visitorCounterBox {margin-top: 8px;font-size: 13px;color: #bdc3c7;text-align: center;}
+        #visitorCounterBox {margin-top: 8px;font-size: 13px;color: #bdc3c7;}
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 10px; }
         .modal-content { background: var(--white); width: 100%; max-width: 500px; border-radius: 12px; padding: 20px; position: relative; max-height: 85vh; overflow-y: auto; }
         .close-btn { position: absolute; top: 10px; right: 15px; font-size: 32px; cursor: pointer; color: #999; line-height: 1; font-weight: bold; }
@@ -213,6 +213,7 @@
             .footer-grid { grid-template-columns: 1fr; text-align: center; gap: 20px;}
             .footer-col h3::after { left: 50%; transform: translateX(-50%); }
             #visitorCounterBox { text-align: left; }
+            .footer-bottom { text-align: left; }
         }
         @media screen and (max-width: 480px) {
             .product-grid { grid-template-columns: 1fr; gap: 15px; }
@@ -300,14 +301,14 @@
                 <p>⏰ 8:00 - 21:00 (T2 - CN)</p>
             </div>
         </div>
-        <div class="footer-bottom">
+       <div class="footer-bottom">
             <div>© 2026-Trịnh Văn Hướng: 0984 026 995.</div>
-           <div id="visitorCounterBox">
+            <div id="visitorCounterBox" style="margin-top: 8px; font-size: 13px; color: #bdc3c7;">
                 👁️ Lượt: <span id="visitCount" style="color: var(--accent); font-weight: bold;">...</span>
                 <span id="visitTodayWrap" style="display: none; margin-left: 6px; color: #95a5a6;">
-                (Hôm nay: <span id="visitTodayCount" style="color: #ffffff; font-weight: bold;">0</span>)
-            </span>
-        </div>
+                    (Hôm nay: <span id="visitTodayCount" style="color: #ffffff; font-weight: bold;">0</span>)
+                </span>
+            </div>
         </div>
     </footer>
 
